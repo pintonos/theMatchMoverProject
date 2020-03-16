@@ -16,3 +16,8 @@ Insert an artificially rendered object into a movie such that everything is geom
 - `python`
 - `open-cv`
 
+## Resources
+
+- https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_calib3d/py_calibration/py_calibration.html
+- https://github.com/smidm/video2calibration
+

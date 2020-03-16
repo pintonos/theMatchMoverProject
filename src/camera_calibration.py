@@ -1,10 +1,11 @@
 import numpy as np
 import cv2
-import glob
 
-VIDEO_PATH = 'test.mp4'
-SQUARE_SIZE = 30
-BOARD_SIZE = (7, 6)
+VIDEO_PATH = './video/test.mp4'
+
+# checkerboard characteristics
+SQUARE_SIZE = 25
+BOARD_SIZE = (8, 6)
 
 # termination criteria
 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, SQUARE_SIZE, 0.001)
@@ -18,18 +19,24 @@ objpoints = []  # 3d point in real world space
 imgpoints = []  # 2d points in image plane.
 
 video_cap = cv2.VideoCapture(VIDEO_PATH)
+number_frames = int(video_cap.get(cv2.CAP_PROP_FRAME_COUNT))
+print('read', number_frames, 'frames ...')
 
 success = 1
 count = 0
+test_img = None
 while success: 
 
     # function extract frames 
-    success, img = video_cap.read() 
+    success, img = video_cap.read()     
     count += 1
+    if count == number_frames // 2: # get test image from middle of video
+        test_img = img
+
     if not success or count % 10 != 0: # use every 10th element for calibration
         continue
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # Find the chess board corners
     ret, corners = cv2.findChessboardCorners(gray, BOARD_SIZE, None)
 
@@ -47,22 +54,24 @@ while success:
 
 cv2.destroyAllWindows()
 
-img = cv2.imread('../img/left12.jpg')
-
+gray = cv2.cvtColor(test_img, cv2.COLOR_BGR2GRAY)
 # calibrate camera
-gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 
-h, w = img.shape[:2]
+h, w = test_img.shape[:2]
 newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
 
 # undistort
-dst = cv2.undistort(img, mtx, dist, None, newcameramtx)
+dst = cv2.undistort(test_img, mtx, dist, None, newcameramtx)
 
 # crop the image
 x, y, w, h = roi
 dst = dst[y:y + h, x:x + w]
-cv2.imwrite('calibresult.png', dst)
+
+# show orignal vs. undistorted image
+cv2.imshow("Orignal", test_img)
+cv2.imshow("Undistorted", dst)
+cv2.waitKey(0)
 
 mean_error = 0
 for i in range(len(objpoints)):

@@ -2,8 +2,12 @@ import numpy as np
 import cv2
 import glob
 
+VIDEO_PATH = 'test.mp4'
+SQUARE_SIZE = 30
+BOARD_SIZE = (7, 6)
+
 # termination criteria
-criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, SQUARE_SIZE, 0.001)
 
 # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
 objp = np.zeros((6 * 7, 3), np.float32)
@@ -13,15 +17,21 @@ objp[:, :2] = np.mgrid[0:7, 0:6].T.reshape(-1, 2)
 objpoints = []  # 3d point in real world space
 imgpoints = []  # 2d points in image plane.
 
-images = ['../img/left02.jpg', '../img/left03.jpg', '../img/left04.jpg', '../img/left05.jpg',
-          '../img/left06.jpg', '../img/left07.jpg', '../img/left08.jpg', '../img/left09.jpg']  # glob.glob('*.jpg')
+video_cap = cv2.VideoCapture(VIDEO_PATH)
 
-for fname in images:
-    img = cv2.imread(fname)
+success = 1
+count = 0
+while success: 
+
+    # function extract frames 
+    success, img = video_cap.read() 
+    count += 1
+    if not success or count % 10 != 0: # use every 10th element for calibration
+        continue
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # Find the chess board corners
-    ret, corners = cv2.findChessboardCorners(gray, (7, 6), None)
+    ret, corners = cv2.findChessboardCorners(gray, BOARD_SIZE, None)
 
     # If found, add object points, image points (after refining them)
     if ret == True:
@@ -31,9 +41,9 @@ for fname in images:
         imgpoints.append(corners2)
 
         # Draw and display the corners
-        img = cv2.drawChessboardCorners(img, (7, 6), corners2, ret)
-        cv2.imshow('img', img)
-        cv2.waitKey(500)
+        #img = cv2.drawChessboardCorners(img, BOARD_SIZE, corners2, ret)
+        #cv2.imshow('img', img)
+        #cv2.waitKey(50)
 
 cv2.destroyAllWindows()
 

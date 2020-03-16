@@ -1,6 +1,6 @@
 # Programming Project Computer Vision
 
-This repository holds the code-base from UIBK [computer vision project](https://orawww.uibk.ac.at/public_prod/owa/lfuonline_lv.details?sem_id_in=20S&lvnr_id_in=703612).
+This repository holds the code-base from UIBK [computer vision project](https://orawww.uibk.ac.at/public_prod/owa/lfuonline_lv.details?sem_id_in=20S&lvnr_id_in=703612). A detailed description of the project can be looked up on the course [website ](https://iis.uibk.ac.at/courses/2020s/703612) (inside UIBK only).
 
 ## Objective 
 

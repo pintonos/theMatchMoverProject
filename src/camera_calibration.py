@@ -32,7 +32,7 @@ while success:
     success, img = video_cap.read()
     count += 1
 
-    # get test image from middle of video
+    # get test image from middle of data
     if count == number_frames // 2:
         test_img = img
 
@@ -63,6 +63,9 @@ gray = cv2.cvtColor(test_img, cv2.COLOR_BGR2GRAY)
 # calibrate camera
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 
+np.save(os.path.join('..', 'tmp', 'matrix.npy'), mtx)
+np.save(os.path.join('..', 'tmp', 'dist.npy'), dist)
+
 h, w = test_img.shape[:2]
 newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
 
@@ -82,4 +85,4 @@ for i in range(len(objpoints)):
 print("total error: ", mean_error / len(objpoints))
 print(newcameramtx)
 
-np.save(os.path.join('..', 'tmp', 'cmatrix.npy'), newcameramtx)
+#np.save(os.path.join('..', 'tmp', 'cmatrix.npy'), newcameramtx)

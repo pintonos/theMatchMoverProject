@@ -37,7 +37,7 @@ while success:
         test_img = img
 
     # use every 10th element for calibration
-    if not success or count % 7 != 0:
+    if not success or count % 3 != 0:
         continue
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

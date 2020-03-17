@@ -1,8 +1,7 @@
 import cv2
 import numpy as np
-import glob
 
-#TODO https://www.pyimagesearch.com/2017/02/06/faster-video-file-fps-with-cv2-videocapture-and-opencv/
+#TODO https://stackoverflow.com/questions/22180923/how-to-place-object-in-video-with-opencv/22192565#22192565
 
 def draw(img, corners, imgpts):
     imgpts = np.int32(imgpts).reshape(-1, 2)

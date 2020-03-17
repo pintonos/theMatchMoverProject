@@ -25,4 +25,10 @@ by https://markhedleyjones.com/projects/calibration-checkerboard-collection
 ## Resources
 
 - https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_calib3d/py_calibration/py_calibration.html
-- https://github.com/smidm/video2calibration
+- https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_calib3d/py_pose/py_pose.html
+- https://stackoverflow.com/questions/22180923/how-to-place-object-in-video-with-opencv/22192565#22192565
+- https://stackoverflow.com/questions/21997021/augmented-reality-openglopencv/21999980#21999980
+- https://medium.com/@omar.ps16/stereo-3d-reconstruction-with-opencv-using-an-iphone-camera-part-ii-77754b58bfe0
+
+
+- https://bitesofcode.wordpress.com/2017/09/12/augmented-reality-with-python-and-opencv-part-1/

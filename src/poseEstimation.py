@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from Constants import *
 
 #TODO https://stackoverflow.com/questions/22180923/how-to-place-object-in-video-with-opencv/22192565#22192565
 
@@ -19,28 +20,18 @@ def draw(img, corners, imgpts):
     return img
 
 
-VIDEO_PATH = '../data/visual-geometry-calibration.MTS'
-
-# checkerboard characteristics
-SQUARE_SIZE = 25
-BOARD_SIZE = (8, 6)
 MAX_FRAMES = 300
 
 # Load previously saved data
-mtx = np.load('../tmp/cmatrix.npy')
-dist = np.load('../tmp/dist.npy')
-
-# termination criteria
-criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, SQUARE_SIZE, 0.001)
+mtx, dist = np.load(MTX), np.load(MAT_DIST_COEFF)
 
 # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-objp = np.zeros((BOARD_SIZE[0] * BOARD_SIZE[1], 3), np.float32)
-objp[:, :2] = np.mgrid[0:BOARD_SIZE[0], 0:BOARD_SIZE[1]].T.reshape(-1, 2)
+objp = getObjectPointsStructure()
 
 axis = np.float32([[0, 0, 0], [0, 3, 0], [3, 3, 0], [3, 0, 0],
                    [0, 0, -3], [0, 3, -3], [3, 3, -3], [3, 0, -3]])
 
-video_cap = cv2.VideoCapture(VIDEO_PATH)
+video_cap = cv2.VideoCapture(CALIB_VIDEO_PATH)
 number_frames = int(video_cap.get(cv2.CAP_PROP_FRAME_COUNT))
 print('read', number_frames, 'frames ...')
 
@@ -54,7 +45,7 @@ rescaled_height = int(frame_height * scale_percent / 100)
 
 # Define the codec and create VideoWriter object
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
-out = cv2.VideoWriter('../tmp/output.avi', fourcc, 20.0, (rescaled_width, rescaled_height))
+out = cv2.VideoWriter(VIDEO_OUT, fourcc, 20.0, (rescaled_width, rescaled_height))
 
 success = 1
 frame_counter = 0
@@ -72,7 +63,7 @@ while success and frame_counter < MAX_FRAMES:
     ret, corners = cv2.findChessboardCorners(gray, BOARD_SIZE, None)
 
     if ret == True:
-        corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+        corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), CRITERIA)
 
         # Find the rotation and translation vectors.
         _, rvecs, tvecs, inliers = cv2.solvePnPRansac(objp, corners2, mtx, dist)

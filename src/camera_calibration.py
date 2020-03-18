@@ -1,25 +1,16 @@
 import numpy as np
 import cv2
 import os
+from Constants import *
 
-VIDEO_PATH = '../data/visual-geometry-calibration.MTS'
 
-# checkerboard characteristics
-SQUARE_SIZE = 25
-BOARD_SIZE = (8, 6)
-
-# termination criteria
-criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, SQUARE_SIZE, 0.001)
-
-# prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-objp = np.zeros((BOARD_SIZE[0] * BOARD_SIZE[1], 3), np.float32)
-objp[:, :2] = np.mgrid[0:BOARD_SIZE[0], 0:BOARD_SIZE[1]].T.reshape(-1, 2)
+objp = getObjectPointsStructure()
 
 # Arrays to store object points and image points from all the images.
 objpoints = []  # 3d point in real world space
 imgpoints = []  # 2d points in image plane.
 
-video_cap = cv2.VideoCapture(VIDEO_PATH)
+video_cap = cv2.VideoCapture(CALIB_VIDEO_PATH)
 number_frames = int(video_cap.get(cv2.CAP_PROP_FRAME_COUNT))
 print('read', number_frames, 'frames ...')
 
@@ -48,7 +39,7 @@ while success:
     if ret:
         objpoints.append(objp)
 
-        corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+        corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), CRITERIA)
         imgpoints.append(corners2)
 
         # Draw and display the corners
@@ -56,6 +47,7 @@ while success:
         # cv2.imshow('img', img)
         # cv2.waitKey(50)
 
+video_cap.release()
 print('reading in complete, calculating matrix...')
 cv2.destroyAllWindows()
 
@@ -63,18 +55,11 @@ gray = cv2.cvtColor(test_img, cv2.COLOR_BGR2GRAY)
 # calibrate camera
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 
-np.save(os.path.join('..', 'tmp', 'matrix.npy'), mtx)
-np.save(os.path.join('..', 'tmp', 'dist.npy'), dist)
+np.save(MTX, mtx)
+np.save(MAT_DIST_COEFF, dist)
 
 h, w = test_img.shape[:2]
 newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
-
-# undistort
-# dst = cv2.undistort(test_img, mtx, dist, None, newcameramtx)
-# x, y, w, h = roi
-# dst = dst[y:y + h, x:x + w]
-# cv2.imshow("Orignal", test_img)
-# cv2.imshow("Undistorted", dst)
 
 mean_error = 0
 for i in range(len(objpoints)):
@@ -85,4 +70,4 @@ for i in range(len(objpoints)):
 print("total error: ", mean_error / len(objpoints))
 print(newcameramtx)
 
-#np.save(os.path.join('..', 'tmp', 'cmatrix.npy'), newcameramtx)
+#np.save(MAT_CAMERA, newcameramtx)

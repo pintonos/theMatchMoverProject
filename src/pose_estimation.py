@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import cv2
 import numpy as np
-from src.Constants import *
+from .Constants import *
 
 #TODO https://stackoverflow.com/questions/22180923/how-to-place-object-in-video-with-opencv/22192565#22192565
 

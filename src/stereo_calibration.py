@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
-from Constants import *
+from .Constants import *
 
 video_cap = cv2.VideoCapture(VIDEO_PATH)
 number_frames = int(video_cap.get(cv2.CAP_PROP_FRAME_COUNT))

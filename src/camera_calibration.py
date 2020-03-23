@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 import os
-from Constants import *
+from src.Constants import *
 
 
 objp = getObjectPointsStructure()
@@ -45,6 +45,7 @@ while success:
         # Draw and display the corners
         # img = cv2.drawChessboardCorners(img, BOARD_SIZE, corners2, ret)
         # cv2.imshow('img', img)
+        # cv2.imwrite(os.path.join('cal-sample_' + str(count) + '.jpg'), img)
         # cv2.waitKey(50)
 
 video_cap.release()

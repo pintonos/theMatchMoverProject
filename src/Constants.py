@@ -15,6 +15,7 @@ VIDEO_PATH = '../data/visual-geometry-video.MTS'
 
 # tmp files
 VIDEO_OUT = '../tmp/output.avi'
+VIDEO_OUT_STEREO = '../tmp/output_stereo.avi'
 MAT_CAMERA = '../tmp/cmatrix.npy'
 MTX = '../tmp/matrix.npy'
 MAT_DIST_COEFF = '../tmp/dist.npy'

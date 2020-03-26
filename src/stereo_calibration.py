@@ -63,7 +63,7 @@ while success:
     K, _ = np.load(MAT_CAMERA), np.load(MAT_DIST_COEFF)
 
     # get E from equation: E = K'^T * F * K
-    E = np.multiply(np.multiply(np.transpose(K), F), K)
+    E = np.matmul(np.matmul(np.transpose(K), F), K)
 
     print("E:")
     print(E)

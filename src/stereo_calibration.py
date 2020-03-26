@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
-from .Constants import *
+from Constants import *
 
 video_cap = cv2.VideoCapture(VIDEO_PATH)
 number_frames = int(video_cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -49,6 +49,8 @@ while success:
 
     pts1 = np.int32(pts1)
     pts2 = np.int32(pts2)
+
+    # get Fundamental matrix
     F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.FM_LMEDS)
     print("F:")
     print(F)
@@ -58,14 +60,22 @@ while success:
     pts2 = pts2[mask.ravel() == 1]
 
     # Load previously saved data
-    mtx, dist = np.load(MAT_CAMERA), np.load(MAT_DIST_COEFF)
+    K, _ = np.load(MAT_CAMERA), np.load(MAT_DIST_COEFF)
 
-    E = np.multiply(np.multiply(np.transpose(mtx), F), mtx)
-
-    H, _ = cv2.findHomography(np.array(pts1), np.array(pts2), cv2.RANSAC)
+    # get E from equation: E = K'^T * F * K
+    E = np.multiply(np.multiply(np.transpose(K), F), K)
 
     print("E:")
     print(E)
+
+    # recover relative camera rotation and translation from essential matrix and the corresponding points
+    inlier_points, R, t, _ = cv2.recoverPose(E, pts1, pts2, K)
+    
+    print(inlier_points, 'inliers points found')
+    print("R:")
+    print(R)
+    print("t:")
+    print(t, '\n')
 
     success, img1 = video_cap.read()
 

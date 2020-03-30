@@ -24,7 +24,16 @@ print("E:\n", E)
 # recover relative camera rotation and translation from essential matrix and the corresponding points
 inlier_points, R, t, _ = cv2.recoverPose(E, pts1, pts2, K)
 
+# IMPORTANT: R and t may need to be inverted:
+# see https://answers.opencv.org/question/31421/opencv-3-essentialmatrix-and-recoverpose/
+# and https://stackoverflow.com/questions/54486906/correctly-interpreting-the-pose-rotation-and-translation-after-recoverpose-f
+
 print("R:\n", R)
 print("t:\n", t)
 
+
 # TODO insert wireframe in img1 and map them to img2
+
+
+# points can be mapped from the first image to the second by the formula: p2 = R*p1 + t
+# see opencv link above

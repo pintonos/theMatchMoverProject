@@ -13,6 +13,9 @@ CALIB_VIDEO_PATH = '../data/visual-geometry-calibration.MTS'
 # video
 VIDEO_PATH = '../data/visual-geometry-video.MTS'
 
+# images
+IMAGE_PATH = '../data/'
+
 # tmp files
 VIDEO_OUT = '../tmp/output.avi'
 VIDEO_OUT_STEREO = '../tmp/output_stereo.avi'

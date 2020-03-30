@@ -19,5 +19,12 @@ while success:
         break
     frame_counter += 1
 
+     
 cv2.imwrite(IMAGE_PATH + 'img1.jpg', img1)
 cv2.imwrite(IMAGE_PATH + 'img2.jpg', img2)
+
+img1 = cv2.resize(img1, (960, 540))
+img2 = cv2.resize(img2, (960, 540))
+cv2.imshow('image 1', img1)
+cv2.imshow('image 2', img2)
+cv2.waitKey(0)

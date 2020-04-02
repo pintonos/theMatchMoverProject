@@ -1,16 +1,41 @@
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
-from Constants import *
+from src.Constants import *
 import pandas as pd
 
 
 def draw(img, imgpts):
     imgpts = np.int32(imgpts).reshape(-1, 2)
-    center = (464, 302)
-    cv2.line(img, center, tuple(imgpts[0].ravel()), (255, 0, 0), 5)
-    cv2.line(img, center, tuple(imgpts[1].ravel()), (0, 255, 0), 5)
-    cv2.line(img, center, tuple(imgpts[2].ravel()), (0, 0, 255), 5)
+    center = tuple(imgpts[0].ravel())
+    x = tuple(imgpts[1].ravel())
+    y = tuple(imgpts[2].ravel())
+    z = tuple(imgpts[3].ravel())
+    xy = tuple(imgpts[4].ravel())
+    xz = tuple(imgpts[5].ravel())
+    yz = tuple(imgpts[6].ravel())
+    xyz = tuple(imgpts[7].ravel())
+
+    # draw middle in red
+    cv2.line(img, x, xy, (0, 0, 255), 3)
+
+    # draw top floor in blue
+    cv2.line(img, y, xy, (0, 255, 0), 3)
+    cv2.line(img, xy, xyz, (0, 255, 0), 3)
+    cv2.line(img, xyz, yz, (0, 255, 0), 3)
+    cv2.line(img, yz, y, (0, 255, 0), 3)
+
+    # draw ground floor in green
+    cv2.line(img, center, x, (255, 0, 0), 3)
+    cv2.line(img, x, xz, (255, 0, 0), 3)
+    cv2.line(img, xz, z, (255, 0, 0), 3)
+    cv2.line(img, z, center, (255, 0, 0), 3)
+
+    # draw middle in red
+    cv2.line(img, center, y, (0, 0, 255), 3)
+    cv2.line(img, xz, xyz, (0, 0, 255), 3)
+    cv2.line(img, z, yz, (0, 0, 255), 3)
+
 
 def draw_points(img, pts):
     for pt in pts:
@@ -26,11 +51,12 @@ K, dist = np.load(MAT_CAMERA), np.load(MAT_DIST_COEFF)
 img1 = cv2.imread('../data/img1.jpg')
 
 
-obj = np.float32([[1,0,0], [0,1,0], [0,0,-1]]).reshape(-1,3)
+obj = np.float32([[0,0,0], [1,0,0], [0,1,0], [0,0,1], [1,1,0], [1,0,1], [0,1,1], [1,1,1]])
 
 # project world coordinates to frame 1
 r_vec_id, _ = cv2.Rodrigues(np.identity(3))
-imgpts1, _ = cv2.projectPoints(obj, r_vec_id, np.zeros(3), K, dist)
+t_vec = np.float32(np.asarray([-4,-2,10]))
+imgpts1, _ = cv2.projectPoints(obj, r_vec_id, t_vec, K, dist)
 
 # map to second image
 

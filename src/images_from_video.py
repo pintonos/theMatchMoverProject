@@ -1,5 +1,5 @@
 import cv2
-from Constants import *
+from src.Constants import *
 
 video_cap = cv2.VideoCapture(VIDEO_PATH)
 number_frames = int(video_cap.get(cv2.CAP_PROP_FRAME_COUNT))

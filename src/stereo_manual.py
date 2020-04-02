@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
-from Constants import *
+from src.Constants import *
 import pandas as pd
 
 

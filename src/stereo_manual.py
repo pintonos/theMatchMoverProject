@@ -9,34 +9,18 @@ SCALING_FACTOR = 9
 
 def draw(img, imgpts):
     imgpts = np.int32(imgpts).reshape(-1, 2)
-    center = tuple(imgpts[0].ravel())
-    x = tuple(imgpts[1].ravel())
-    y = tuple(imgpts[2].ravel())
-    z = tuple(imgpts[3].ravel())
-    xy = tuple(imgpts[4].ravel())
-    xz = tuple(imgpts[5].ravel())
-    yz = tuple(imgpts[6].ravel())
-    xyz = tuple(imgpts[7].ravel())
-
-    # draw middle in red
-    cv2.line(img, x, xy, (0, 0, 255), 3)
-
-    # draw top floor in blue
-    cv2.line(img, y, xy, (0, 255, 0), 3)
-    cv2.line(img, xy, xyz, (0, 255, 0), 3)
-    cv2.line(img, xyz, yz, (0, 255, 0), 3)
-    cv2.line(img, yz, y, (0, 255, 0), 3)
 
     # draw ground floor in green
-    cv2.line(img, center, x, (255, 0, 0), 3)
-    cv2.line(img, x, xz, (255, 0, 0), 3)
-    cv2.line(img, xz, z, (255, 0, 0), 3)
-    cv2.line(img, z, center, (255, 0, 0), 3)
+    img = cv2.drawContours(img, [imgpts[:4]], -1, (0, 255, 0), -3)
 
-    # draw middle in red
-    cv2.line(img, center, y, (0, 0, 255), 3)
-    cv2.line(img, xz, xyz, (0, 0, 255), 3)
-    cv2.line(img, z, yz, (0, 0, 255), 3)
+    # draw pillars in blue color
+    for i, j in zip(range(4), range(4, 8)):
+        img = cv2.line(img, tuple(imgpts[i]), tuple(imgpts[j]), (255), 3)
+
+    # draw top layer in red color
+    img = cv2.drawContours(img, [imgpts[4:]], -1, (0, 0, 255), 3)
+
+    return img
 
 
 def draw_points(img, pts):
@@ -89,7 +73,7 @@ pts3 *= 2
 # Load previously saved data
 K, dist = np.load(MAT_CAMERA), np.load(MAT_DIST_COEFF)
 
-obj = np.float32([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, -1], [1, 1, 0], [1, 0, -1], [0, 1, -1], [1, 1, -1]])
+obj = np.float32([[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0], [0, 0, -1], [0, 1, -1], [1, 1, -1], [1, 0, -1]])
 
 # project world coordinates to frame 1
 r_vec_id, _ = cv2.Rodrigues(np.identity(3))

@@ -5,8 +5,9 @@ video_cap = cv2.VideoCapture(VIDEO_PATH)
 number_frames = int(video_cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
 img_index1 = 0
-img_index2 = number_frames - 1
-img_index3 = number_frames // 2 + 4
+img_index2 = number_frames // 2 + 4
+img_index3 = number_frames - 1
+
 
 frame_counter = 0
 success = True
@@ -15,10 +16,10 @@ while success:
     img = video_cap.read()
     if img_index1 == frame_counter:
         success, img1 = img
-    if img_index3 == frame_counter:
-        success, img3 = img
     if img_index2 == frame_counter:
         success, img2 = img
+    if img_index3 == frame_counter:
+        success, img3 = img
         break
     frame_counter += 1
 

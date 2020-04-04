@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from Constants import *
 
-SKIP_FPS = 150
+SKIP_FPS = 100
 MAX_FPS = 195
 SCALING_FACTOR = 9
 
@@ -103,7 +103,7 @@ while success and frame_counter < MAX_FPS:
     pts1 = np.int32(pts1)
     pts2 = np.int32(pts2)
 
-    E, _ = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=0.01,
+    E, _ = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=1,
                                 cameraMatrix=K)
 
     # recover relative camera rotation and translation from essential matrix and the corresponding points
@@ -115,8 +115,9 @@ while success and frame_counter < MAX_FPS:
     imgpts2, _ = cv2.projectPoints(obj, r_vec, t, K, dist)
 
     img2 = draw(img2, imgpts2)
-    cv2.imshow('img', img2)
-    cv2.waitKey(50)
+
+    #cv2.imshow('img', img2)
+    #cv2.waitKey(1)
 
     out.write(img2)
 

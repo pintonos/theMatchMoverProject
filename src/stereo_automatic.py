@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
-from Constants import *
+from src.Constants import *
 import pandas as pd
 
 SCALING_FACTOR = 9
@@ -41,24 +41,55 @@ def invert(R, t):
     return R_inv, t_inv
 
 
-# not used now
-def get_E_from_F(pts1, pts2, K):
-    F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.RANSAC)
-    # print(mask)
-    F = F/np.linalg.norm(F)
-    # Compute E.
-    E_from_F = np.dot(np.dot(np.transpose(K), F), K)
-    return E_from_F
+def get_points(img1, img2):
+    sift = cv2.xfeatures2d.SIFT_create()
+
+    gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+    gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
+
+    # find the keypoints and descriptors with SIFT
+    kp1, des1 = sift.detectAndCompute(gray1, None)
+    kp2, des2 = sift.detectAndCompute(gray2, None)
+
+    # FLANN parameters
+    FLANN_INDEX_KDTREE = 0
+    index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+    search_params = dict(checks=50)
+
+    flann = cv2.FlannBasedMatcher(index_params, search_params)
+    matches = flann.knnMatch(des1, des2, k=2)
+
+    good = []
+    pts1 = []
+    pts2 = []
+
+    # ratio test as per Lowe's paper
+    for i, (m, n) in enumerate(matches):
+        if m.distance < 0.8 * n.distance:
+            good.append(m)
+            pts2.append(kp2[m.trainIdx].pt)
+            pts1.append(kp1[m.queryIdx].pt)
+
+    pts1 = np.int32(pts1)
+    pts2 = np.int32(pts2)
+
+    return pts1, pts2
 
 
-def stereo_view_map(pts1, pts2, t_vec, K, dist):
+def stereo_view_map(pts1, pts2, K):
     # https://stackoverflow.com/questions/33906111/how-do-i-estimate-positions-of-two-cameras-in-opencv
     # Normalize for Essential Matrix calculation
     # pts_l_norm = cv2.undistortPoints(np.expand_dims(pts1, axis=1).astype(dtype=np.float32), cameraMatrix=K, distCoeffs=dist)
     # pts_r_norm = cv2.undistortPoints(np.expand_dims(pts2, axis=1).astype(dtype=np.float32), cameraMatrix=K, distCoeffs=dist)
 
-    E, _ = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=0.01,
+    E, _ = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=1,
                                 cameraMatrix=K)  # TODO test different settings
+
+    #E_inv = np.linalg.inv(E)
+    # print(np.around(E @ np.linalg.inv(E)).astype(int))
+
+    #p1 = np.float32([[600, 315, 1]]).reshape(3, 1)
+    #print(E_inv @ p1)
 
     # recover relative camera rotation and translation from essential matrix and the corresponding points
     points, R, t, _ = cv2.recoverPose(E, pts1, pts2, K)
@@ -71,16 +102,6 @@ def stereo_view_map(pts1, pts2, t_vec, K, dist):
     return imgpts2
 
 
-# read manual points
-pts1 = pd.read_csv('../tmp/manual_pt1.csv', sep=',').values
-pts2 = pd.read_csv('../tmp/manual_pt2.csv', sep=',').values
-pts3 = pd.read_csv('../tmp/manual_pt3.csv', sep=',').values
-
-# adjust points to real scaling
-pts1 *= 2
-pts2 *= 2
-pts3 *= 2
-
 # Load previously saved data
 K, dist = np.load(MAT_CAMERA), np.load(MAT_DIST_COEFF)
 
@@ -91,15 +112,18 @@ r_vec_id, _ = cv2.Rodrigues(np.identity(3))
 t_vec = np.float32(np.asarray([0, 0, SCALING_FACTOR]))
 imgpts1, _ = cv2.projectPoints(obj, r_vec_id, t_vec, K, dist)
 
-# map to second image
-imgpts2 = stereo_view_map(pts1, pts2, t_vec, K, dist)
-imgpts3 = stereo_view_map(pts1, pts3, t_vec, K, dist)
-
-# show images
 img1 = cv2.imread('../data/img1.jpg')
 img2 = cv2.imread('../data/img2.jpg')
 img3 = cv2.imread('../data/img3.jpg')
 
+# map images
+pts1, pts2 = get_points(img1, img2)
+pts1_3, pts3 = get_points(img2, img3)
+
+imgpts2 = stereo_view_map(pts1, pts2, K)
+imgpts3 = stereo_view_map(pts1_3, pts3, K)
+
+# show images
 draw_points(img1, pts1)
 draw(img1, imgpts1)
 img1 = cv2.resize(img1, (960, 540))

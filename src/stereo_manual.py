@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
-from src.Constants import *
+from Constants import *
 import pandas as pd
 
 SCALING_FACTOR = 9
@@ -40,7 +40,18 @@ def invert(R, t):
     t_inv = backRotation[:, 3][:-1].reshape(3, 1)
     return R_inv, t_inv
 
-def stereo_view_map(pts1, pts2, K):
+
+# not used now
+def get_E_from_F(pts1, pts2, K):
+    F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.RANSAC)
+    # print(mask)
+    F = F/np.linalg.norm(F)
+    # Compute E.
+    E_from_F = np.dot(np.dot(np.transpose(K), F), K)
+    return E_from_F
+
+
+def stereo_view_map(pts1, pts2, t_vec, K):
     # https://stackoverflow.com/questions/33906111/how-do-i-estimate-positions-of-two-cameras-in-opencv
     # Normalize for Essential Matrix calculation
     # pts_l_norm = cv2.undistortPoints(np.expand_dims(pts1, axis=1).astype(dtype=np.float32), cameraMatrix=K, distCoeffs=dist)
@@ -81,8 +92,8 @@ t_vec = np.float32(np.asarray([0, 0, SCALING_FACTOR]))
 imgpts1, _ = cv2.projectPoints(obj, r_vec_id, t_vec, K, dist)
 
 # map to second image
-imgpts2 = stereo_view_map(pts1, pts2, K)
-imgpts3 = stereo_view_map(pts1, pts3, K)
+imgpts2 = stereo_view_map(pts1, pts2, t_vec, K)
+imgpts3 = stereo_view_map(pts1, pts3, t_vec, K)
 
 # show images
 img1 = cv2.imread('../data/img1.jpg')

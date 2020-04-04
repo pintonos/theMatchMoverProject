@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from Constants import *
 
-SKIP_FPS = 100
+SKIP_FPS = 30
 MAX_FPS = 195
 SCALING_FACTOR = 9
 
@@ -32,50 +32,11 @@ def get_harris_corner(img):
     return dst
 
 
-# Load previously saved data
-K, dist = np.load(MAT_CAMERA), np.load(MAT_DIST_COEFF)
-
-obj = np.float32([[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0], [0, 0, -1], [0, 1, -1], [1, 1, -1], [1, 0, -1]])
-
-video_cap = cv2.VideoCapture(VIDEO_PATH)
-number_frames = int(video_cap.get(cv2.CAP_PROP_FRAME_COUNT))
-print('read', number_frames, 'frames ...')
-
-# project world coordinates to frame 1
-r_vec_id, _ = cv2.Rodrigues(np.identity(3))
-t_vec = np.float32(np.asarray([0, 0, SCALING_FACTOR]))
-imgpts1, _ = cv2.projectPoints(obj, r_vec_id, t_vec, K, dist)
-
-success, img1 = video_cap.read()
-dst1 = get_harris_corner(img1)
-gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
-
-# Get the Default resolutions
-frame_width = int(video_cap.get(3))
-frame_height = int(video_cap.get(4))
-
-# Define the codec and create VideoWriter object
-fourcc = cv2.VideoWriter_fourcc(*'XVID')
-out = cv2.VideoWriter(VIDEO_OUT_STEREO, fourcc, 20.0, (frame_width, frame_height))
-
-out.write(img1)
-
-frame_counter = 0
-success = True
-img2 = 0
-while success and frame_counter < MAX_FPS:
-    frame_counter = frame_counter + 1
-    success, img2 = video_cap.read()
-    print("Frame: {}/{}".format(frame_counter, number_frames))
-
-    if frame_counter < SKIP_FPS:
-        continue
-
+def get_points(img1, img2):
     sift = cv2.xfeatures2d.SIFT_create()
 
+    gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
     gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
-
-    #dst2 = get_harris_corner(img2)
 
     # find the keypoints and descriptors with SIFT
     kp1, des1 = sift.detectAndCompute(gray1, None)
@@ -103,8 +64,50 @@ while success and frame_counter < MAX_FPS:
     pts1 = np.int32(pts1)
     pts2 = np.int32(pts2)
 
-    E, _ = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=1,
-                                cameraMatrix=K)
+    return pts1, pts2
+
+# Load previously saved data
+K, dist = np.load(MAT_CAMERA), np.load(MAT_DIST_COEFF)
+
+obj = np.float32([[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0], [0, 0, -1], [0, 1, -1], [1, 1, -1], [1, 0, -1]])
+
+video_cap = cv2.VideoCapture(VIDEO_PATH)
+number_frames = int(video_cap.get(cv2.CAP_PROP_FRAME_COUNT))
+print('read', number_frames, 'frames ...')
+
+# Get the Default resolutions
+frame_width = int(video_cap.get(3))
+frame_height = int(video_cap.get(4))
+
+# Define the codec and create VideoWriter object
+fourcc = cv2.VideoWriter_fourcc(*'XVID')
+out = cv2.VideoWriter(VIDEO_OUT_STEREO, fourcc, 20.0, (frame_width, frame_height))
+
+# project world coordinates to frame 1
+r_vec_id, _ = cv2.Rodrigues(np.identity(3))
+t_vec = np.float32(np.asarray([0, 0, SCALING_FACTOR]))
+imgpts1, _ = cv2.projectPoints(obj, r_vec_id, t_vec, K, dist)
+
+success, img1 = video_cap.read()
+dst1 = get_harris_corner(img1)
+
+out.write(img1)
+
+frame_counter = 0
+success = True
+img2 = 0
+while success and frame_counter < MAX_FPS:
+    frame_counter = frame_counter + 1
+    success, img2 = video_cap.read()
+    print("Frame: {}/{}".format(frame_counter, number_frames))
+
+    if frame_counter < SKIP_FPS:
+        continue
+
+    pts1, pts2 = get_points(img1, img2)
+    print(pts1, pts2)
+
+    E, _ = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=1, cameraMatrix=K)
 
     # recover relative camera rotation and translation from essential matrix and the corresponding points
     points, R, t, _ = cv2.recoverPose(E, pts1, pts2, K)
@@ -116,8 +119,8 @@ while success and frame_counter < MAX_FPS:
 
     img2 = draw(img2, imgpts2)
 
-    #cv2.imshow('img', img2)
-    #cv2.waitKey(1)
+    cv2.imshow('img', img2)
+    cv2.waitKey(1)
 
     out.write(img2)
 

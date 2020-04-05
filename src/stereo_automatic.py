@@ -4,7 +4,16 @@ from matplotlib import pyplot as plt
 from src.Constants import *
 import pandas as pd
 
-SCALING_FACTOR = 9
+np.set_printoptions(suppress=True)
+
+OBJECT_POSITION = np.asarray(np.float32([1, 1.7, 27]))
+
+# -60 degrees about x-axis
+OBJECT_ORIENTATION = np.float32([ # https://www.andre-gaschler.com/rotationconverter/
+    [1, 0, 0],
+    [0, 0.5, 0.8660254],
+    [0, -0.8660254, 0.5]
+])
 
 
 def draw(img, imgpts):
@@ -85,17 +94,18 @@ def stereo_view_map(pts1, pts2, K):
     E, _ = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=1,
                                 cameraMatrix=K)  # TODO test different settings
 
-    #E_inv = np.linalg.inv(E)
+    # E_inv = np.linalg.inv(E)
     # print(np.around(E @ np.linalg.inv(E)).astype(int))
 
-    #p1 = np.float32([[600, 315, 1]]).reshape(3, 1)
-    #print(E_inv @ p1)
+    # p1 = np.float32([[600, 315, 1]]).reshape(3, 1)
+    # print(E_inv @ p1)
 
     # recover relative camera rotation and translation from essential matrix and the corresponding points
     points, R, t, _ = cv2.recoverPose(E, pts1, pts2, K)
 
     # project world coordinates to frame 2
-    t += np.expand_dims(t_vec, axis=1)  # add scaling factor
+    t = np.add(t, np.expand_dims(t_vec, axis=1))  # add scaling factor
+    R = R @ OBJECT_ORIENTATION
     r_vec, _ = cv2.Rodrigues(R, dst=dist)
     imgpts2, _ = cv2.projectPoints(obj, r_vec, t, K, dist)
 
@@ -105,11 +115,12 @@ def stereo_view_map(pts1, pts2, K):
 # Load previously saved data
 K, dist = np.load(MAT_CAMERA), np.load(MAT_DIST_COEFF)
 
-obj = np.float32([[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0], [0, 0, -1], [0, 1, -1], [1, 1, -1], [1, 0, -1]])
+obj = np.float32([[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0], [0, 0, -1], [0, 1, -1], [1, 1, -1], [1, 0, -1]]) * 1.5
 
 # project world coordinates to frame 1
-r_vec_id, _ = cv2.Rodrigues(np.identity(3))
-t_vec = np.float32(np.asarray([0, 0, SCALING_FACTOR]))
+r_vec_id, _ = cv2.Rodrigues(OBJECT_ORIENTATION)
+
+t_vec = OBJECT_POSITION
 imgpts1, _ = cv2.projectPoints(obj, r_vec_id, t_vec, K, dist)
 
 img1 = cv2.imread('../data/img1.jpg')

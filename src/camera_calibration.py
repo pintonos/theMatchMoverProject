@@ -1,10 +1,10 @@
 import numpy as np
 import cv2
 import os
-from .Constants import *
+from .config import *
 
 
-objp = getObjectPointsStructure()
+objp = get_obj_point_structure()
 
 # Arrays to store object points and image points from all the images.
 objpoints = []  # 3d point in real world space
@@ -33,7 +33,7 @@ while success:
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # Find the chess board corners
-    ret, corners = cv2.findChessboardCorners(gray, BOARD_SIZE, None)
+    ret, corners = cv2.findChessboardCorners(gray, CALIBR_BOARD_SHAPE, None)
 
     # If found, add object points, image points (after refining them)
     if ret:
@@ -56,8 +56,7 @@ gray = cv2.cvtColor(test_img, cv2.COLOR_BGR2GRAY)
 # calibrate camera
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 
-np.save(MTX, mtx)
-np.save(MAT_DIST_COEFF, dist)
+np.save(CAMERA_DIST_COEFF, dist)
 
 h, w = test_img.shape[:2]
 newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))

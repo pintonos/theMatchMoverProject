@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
-from src.Constants import *
+from src.config import *
 import pandas as pd
 
 np.set_printoptions(suppress=True)
@@ -113,7 +113,7 @@ def stereo_view_map(pts1, pts2, K):
 
 
 # Load previously saved data
-K, dist = np.load(MAT_CAMERA), np.load(MAT_DIST_COEFF)
+K, dist = np.load(CAMERA_MATRIX), np.load(CAMERA_DIST_COEFF)
 
 obj = np.float32([[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0], [0, 0, -1], [0, 1, -1], [1, 1, -1], [1, 0, -1]]) * 1.5
 

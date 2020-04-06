@@ -1,5 +1,5 @@
 import cv2
-from src.Constants import *
+from src.config import *
 
 video_cap = cv2.VideoCapture(VIDEO_PATH)
 number_frames = int(video_cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -24,9 +24,9 @@ while success:
     frame_counter += 1
 
      
-cv2.imwrite(IMAGE_PATH + 'img1.jpg', img1)
-cv2.imwrite(IMAGE_PATH + 'img2.jpg', img2)
-cv2.imwrite(IMAGE_PATH + 'img3.jpg', img3)
+cv2.imwrite(DATA_PATH + 'img1.jpg', img1)
+cv2.imwrite(DATA_PATH + 'img2.jpg', img2)
+cv2.imwrite(DATA_PATH + 'img3.jpg', img3)
 
 img1 = cv2.resize(img1, (960, 540))
 img2 = cv2.resize(img2, (960, 540))

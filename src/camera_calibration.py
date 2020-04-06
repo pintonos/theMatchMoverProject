@@ -1,7 +1,4 @@
-import numpy as np
-import cv2
-import os
-from .config import *
+from src.util.config import *
 
 
 objp = get_obj_point_structure()

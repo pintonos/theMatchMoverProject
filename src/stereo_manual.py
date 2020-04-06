@@ -96,9 +96,9 @@ imgpts2 = stereo_view_map(pts1, pts2, t_vec, K, dist)
 imgpts3 = stereo_view_map(pts1, pts3, t_vec, K, dist)
 
 # show images
-img1 = cv2.imread('../data/img1.jpg')
-img2 = cv2.imread('../data/img2.jpg')
-img3 = cv2.imread('../data/img3.jpg')
+img1 = cv2.imread('../data/img_1.jpg')
+img2 = cv2.imread('../data/img_2.jpg')
+img3 = cv2.imread('../data/img_3.jpg')
 
 draw_points(img1, pts1)
 draw(img1, imgpts1)

@@ -1,8 +1,4 @@
-import cv2
-import numpy as np
-from matplotlib import pyplot as plt
-from src.config import *
-import pandas as pd
+from src.util.config import *
 
 np.set_printoptions(suppress=True)
 
@@ -123,9 +119,9 @@ r_vec_id, _ = cv2.Rodrigues(OBJECT_ORIENTATION)
 t_vec = OBJECT_POSITION
 imgpts1, _ = cv2.projectPoints(obj, r_vec_id, t_vec, K, dist)
 
-img1 = cv2.imread('../data/img1.jpg')
-img2 = cv2.imread('../data/img2.jpg')
-img3 = cv2.imread('../data/img3.jpg')
+img1 = cv2.imread('../data/img_1.jpg')
+img2 = cv2.imread('../data/img_2.jpg')
+img3 = cv2.imread('../data/img_3.jpg')
 
 # map images
 pts1, pts2 = get_points(img1, img2)

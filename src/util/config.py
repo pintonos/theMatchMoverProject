@@ -6,6 +6,9 @@ Paths for INPUT and OUTPUT video files
 Paths for INTERMEDIATE files
 """
 
+DEMO_RESIZE = (960, 540)
+
+SCALING_FACTOR = 9
 CALIBR_SQUARE_SIZE_MM = 25
 CALIBR_BOARD_SHAPE = (8, 6)
 
@@ -31,7 +34,32 @@ VIDEO_PATH = DATA_PATH + 'visual-geometry-video.MTS'
 
 # Path to output video
 VIDEO_OUT_PATH = TMP_PATH + 'output.avi'
+VIDEO_OUT_STEREO_PATH = TMP_PATH + 'output_stereo.avi'
 
 # Intermediate files
 CAMERA_MATRIX = TMP_PATH + 'cmatrix.npy'
 CAMERA_DIST_COEFF = TMP_PATH + 'dist.npy'
+MANUAL_MATCH_POINTS_1 = TMP_PATH + 'manual_pt1.csv'
+MANUAL_MATCH_POINTS_2 = TMP_PATH + 'manual_pt2.csv'
+MANUAL_MATCH_POINTS_3 = TMP_PATH + 'manual_pt3.csv'
+
+K, dist = None, None
+
+
+def load_interm(camera_matrix, camera_dist_coeff):
+    global K
+    global dist
+
+    try:
+        K = np.load(camera_matrix)
+        dist = np.load(camera_dist_coeff)
+    except IOError:
+        # do nothing
+        pass
+
+
+load_interm(CAMERA_MATRIX, CAMERA_DIST_COEFF)
+load_interm('../' + CAMERA_MATRIX, '../' + CAMERA_DIST_COEFF)
+
+if K is None or dist is None:
+    print('No camera matrix or distortion coefficient initialized.')

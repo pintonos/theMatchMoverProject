@@ -56,21 +56,21 @@ print('Video processing completed, calculating calibration matrix...')
 
 # Calibrate camera
 gray = cv2.cvtColor(demo_img, cv2.COLOR_BGR2GRAY)
-ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(obj_points_3d, img_points_2d, gray.shape[::-1], None, None)
+ret, mtx, dist_tmp, rvecs, tvecs = cv2.calibrateCamera(obj_points_3d, img_points_2d, gray.shape[::-1], None, None)
 
 h, w = demo_img.shape[:2]
-camera_mtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
+camera_mtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist_tmp, (w, h), 1, (w, h))
 
 # Save obtained camera matrix and distance coefficient
 if SAVE:
-    np.save(CAMERA_DIST_COEFF, dist)
+    np.save(CAMERA_DIST_COEFF, dist_tmp)
     np.save(CAMERA_MATRIX, camera_mtx)
 print('Camera matrix: ' + str(camera_mtx))
 
 # Calculate mean error
 mean_error = 0
 for i in range(len(obj_points_3d)):
-    tmp_proj_points, _ = cv2.projectPoints(obj_points_3d[i], rvecs[i], tvecs[i], mtx, dist)
+    tmp_proj_points, _ = cv2.projectPoints(obj_points_3d[i], rvecs[i], tvecs[i], mtx, dist_tmp)
     error = cv2.norm(img_points_2d[i], tmp_proj_points, cv2.NORM_L2) / len(tmp_proj_points)
     mean_error += error
 

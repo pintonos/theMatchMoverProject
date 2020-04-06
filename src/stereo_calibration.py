@@ -1,96 +1,84 @@
-import cv2
-import numpy as np
-from Constants import *
-from matcher import *
+from src.functions.matcher_functions import *
+from src.functions.draw_functions import *
+from src.util.config import *
 
 np.set_printoptions(suppress=True)
+
+# Check intermediate values
+if K is None or dist is None:
+    raise Exception('Camera matrix or distortion coefficient not found')
 
 SKIP_FPS = 30
 MAX_FPS = 80
 
 OBJECT_POSITION = np.asarray(np.float32([1, 1.7, 27]))
 
-# -60 degrees about x-axis
-OBJECT_ORIENTATION = np.float32([ # https://www.andre-gaschler.com/rotationconverter/
+# Orientation matrix -60 degrees about x-axis
+# More explanation https://www.andre-gaschler.com/rotationconverter/
+OBJECT_ORIENTATION = np.float32([
     [1, 0, 0],
     [0, 0.5, 0.8660254],
     [0, -0.8660254, 0.5]
 ])
 
-def draw(img, imgpts):
-    imgpts = np.int32(imgpts).reshape(-1, 2)
+# Points for a 3D cube
+img_points_3d = get_3d_cube_points()
 
-    # draw ground floor in green
-    img = cv2.drawContours(img, [imgpts[:4]], -1, (0, 255, 0), -3)
-
-    # draw pillars in blue color
-    for i, j in zip(range(4), range(4, 8)):
-        img = cv2.line(img, tuple(imgpts[i]), tuple(imgpts[j]), (255), 3)
-
-    # draw top layer in red color
-    img = cv2.drawContours(img, [imgpts[4:]], -1, (0, 0, 255), 3)
-
-    return img
-
-# Load previously saved data
-K, dist = np.load(MAT_CAMERA), np.load(MAT_DIST_COEFF)
-
-obj = np.float32([[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0], [0, 0, -1], [0, 1, -1], [1, 1, -1], [1, 0, -1]])
-
-video_cap = cv2.VideoCapture(VIDEO_PATH)
-number_frames = int(video_cap.get(cv2.CAP_PROP_FRAME_COUNT))
-print('read', number_frames, 'frames ...')
+video = cv2.VideoCapture(VIDEO_PATH)
+frames_total = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+print('Processing', frames_total, 'frames ...')
 
 # Get the Default resolutions
-frame_width = int(video_cap.get(3))
-frame_height = int(video_cap.get(4))
+frame_width = int(video.get(3))
+frame_height = int(video.get(4))
 
 # Define the codec and create VideoWriter object
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
-out = cv2.VideoWriter(VIDEO_OUT_STEREO, fourcc, 20.0, (frame_width, frame_height))
+out = cv2.VideoWriter(VIDEO_OUT_STEREO_PATH, fourcc, 20.0, (frame_width, frame_height))
 
-# project world coordinates to frame 1
+# Project world coordinates to first frame
 r_vec_id, _ = cv2.Rodrigues(OBJECT_ORIENTATION)
 t_vec = OBJECT_POSITION
-imgpts1, _ = cv2.projectPoints(obj, r_vec_id, t_vec, K, dist)
+proj_points_2d, _ = cv2.projectPoints(img_points_3d, r_vec_id, t_vec, K, dist)
 
-success, img1 = video_cap.read()
-dst1 = get_harris_corner(img1)
+success, first_frame = video.read()
+first_frame = draw(first_frame, proj_points_2d)
 
-out.write(img1)
+# dst1 = get_harris_corner(first_frame)  # TODO what's this for?
+out.write(first_frame)
 
-frame_counter = 0
-success = True
-img2 = 0
-while success and frame_counter < MAX_FPS:
-    frame_counter = frame_counter + 1
-    success, img2 = video_cap.read()
-    print("Frame: {}/{}".format(frame_counter, number_frames))
+# Project coordinates to every following frame
+count = 0
+frame = 0
+while success and count < MAX_FPS:
+    count += 1
+    success, frame = video.read()
+    print("Frame: {}/{}".format(count, frames_total))
 
-    if frame_counter < SKIP_FPS:
+    if count < SKIP_FPS:
         continue
 
-    pts1, pts2 = get_points(img1, img2, 'FAST', True, 'FLANN')
+    # Automatic point matching
+    match_points_1, match_points_2 = get_points(first_frame, frame, 'FAST', True, 'FLANN')
 
-    E, _ = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=1, cameraMatrix=K)
+    E, _ = cv2.findEssentialMat(match_points_1, match_points_2, method=cv2.RANSAC, prob=0.999, threshold=1, cameraMatrix=K)
 
-    # recover relative camera rotation and translation from essential matrix and the corresponding points
-    points, R, t, _ = cv2.recoverPose(E, pts1, pts2, K)
+    # Recover relative camera rotation and translation from essential matrix and the corresponding points
+    _, R, t, _ = cv2.recoverPose(E, match_points_1, match_points_2, K)
 
-    # project world coordinates to frame 2
+    # Project world coordinates to frame
     t += np.expand_dims(t_vec, axis=1)  # add scaling factor
     R = R @ OBJECT_ORIENTATION
     r_vec, _ = cv2.Rodrigues(R, dst=dist)
-    imgpts2, _ = cv2.projectPoints(obj, r_vec, t, K, dist)
+    proj_points_img_2, _ = cv2.projectPoints(img_points_3d, r_vec, t, K, dist)
 
-    img2 = draw(img2, imgpts2)
+    frame = draw(frame, proj_points_img_2)
 
-    #cv2.imshow('img', img2)
-    #cv2.waitKey(1)
+    # DEBUG: Plot frame
+    # cv2.imshow('current_frame', frame)
+    # cv2.waitKey(1)
+    out.write(frame)
 
-    out.write(img2)
-
-
-video_cap.release()
+video.release()
 out.release()
 cv2.destroyAllWindows()

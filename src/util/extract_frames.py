@@ -5,8 +5,6 @@ from util.config import *
 Frames are saved in DATA_PATH
 """
 
-DEMO_RESIZE = (960, 540)
-
 video = cv2.VideoCapture('../' + VIDEO_PATH)
 frames_total = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 

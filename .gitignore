@@ -1,5 +1,4 @@
-/data/
+/resources/data/
 /.idea/
 /src/__pycache__
-/tmp/output.avi
-/tmp/matches.jpg
+/resources/tmp/output.avi

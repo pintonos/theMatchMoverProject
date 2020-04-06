@@ -23,8 +23,8 @@ def get_obj_point_structure():
 CRITERIA = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, CALIBR_SQUARE_SIZE_MM, 0.001)
 
 # Data & Tmp path
-DATA_PATH = '../data/'
-TMP_PATH = '../tmp/'
+DATA_PATH = '../resources/data/'
+TMP_PATH = '../resources/tmp/'
 
 # Path to calibration video
 CALIB_VIDEO_PATH = DATA_PATH + 'visual-geometry-calibration.MTS'

@@ -1,4 +1,4 @@
-from util.config import *
+from util import *
 
 """ Extract three different frames from input video
 

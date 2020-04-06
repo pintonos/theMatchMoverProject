@@ -1,8 +1,7 @@
 import pandas as pd
 
-from src.functions.draw_functions import *
-from src.functions.stereo_functions import *
-from src.util.config import *
+from functions import *
+from util import *
 
 """ Stereo image calibration with manual extracted points
 

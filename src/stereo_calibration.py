@@ -1,6 +1,5 @@
-from src.functions.matcher_functions import *
-from src.functions.draw_functions import *
-from src.util.config import *
+from functions import *
+from util import *
 
 np.set_printoptions(suppress=True)
 

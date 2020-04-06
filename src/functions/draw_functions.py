@@ -1,4 +1,4 @@
-from src.util.config import *
+from util import *
 
 """ Functions to draw points into an image
 """

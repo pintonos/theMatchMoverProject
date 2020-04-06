@@ -1,4 +1,4 @@
-from src.util.config import *
+from util import *
 
 """ Calibrate camera with calibration video
 

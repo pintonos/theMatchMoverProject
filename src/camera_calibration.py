@@ -5,6 +5,7 @@ from src.util.config import *
 Will calculate camera matrix and distortion coefficient
 """
 
+SAVE = True  # Save results to disk
 N_TH_FRAME_TO_USE = 3  # use only every n-th frame for calibration
 
 point_structure = get_obj_point_structure()
@@ -61,8 +62,9 @@ h, w = demo_img.shape[:2]
 camera_mtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
 
 # Save obtained camera matrix and distance coefficient
-np.save(CAMERA_DIST_COEFF, dist)
-np.save(CAMERA_MATRIX, camera_mtx)
+if SAVE:
+    np.save(CAMERA_DIST_COEFF, dist)
+    np.save(CAMERA_MATRIX, camera_mtx)
 print('Camera matrix: ' + str(camera_mtx))
 
 # Calculate mean error

@@ -7,7 +7,7 @@ Frames are saved in DATA_PATH
 
 DEMO_RESIZE = (960, 540)
 
-video = cv2.VideoCapture(VIDEO_PATH)
+video = cv2.VideoCapture('../' + VIDEO_PATH)
 frames_total = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 
 frame_1 = 0
@@ -32,9 +32,9 @@ while success:
 if img_1 is None or img_2 is None or img_3 is None:
     raise Exception('Unable to find all frames')
 
-cv2.imwrite(DATA_PATH + 'img_1.jpg', img_1)
-cv2.imwrite(DATA_PATH + 'img_2.jpg', img_2)
-cv2.imwrite(DATA_PATH + 'img_3.jpg', img_3)
+cv2.imwrite('../' + DATA_PATH + 'img_1.jpg', img_1)
+cv2.imwrite('../' + DATA_PATH + 'img_2.jpg', img_2)
+cv2.imwrite('../' + DATA_PATH + 'img_3.jpg', img_3)
 
 cv2.imshow('img_1', cv2.resize(img_1, DEMO_RESIZE))
 cv2.imshow('img_2', cv2.resize(img_2, DEMO_RESIZE))

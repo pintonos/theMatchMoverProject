@@ -1,70 +1,75 @@
 from src.util.config import *
 
+""" Calibrate camera with calibration video
 
-objp = get_obj_point_structure()
+Will calculate camera matrix and distortion coefficient
+"""
 
-# Arrays to store object points and image points from all the images.
-objpoints = []  # 3d point in real world space
-imgpoints = []  # 2d points in image plane.
+N_TH_FRAME_TO_USE = 3  # use only every n-th frame for calibration
 
-video_cap = cv2.VideoCapture(CALIB_VIDEO_PATH)
-number_frames = int(video_cap.get(cv2.CAP_PROP_FRAME_COUNT))
-print('read', number_frames, 'frames ...')
+point_structure = get_obj_point_structure()
 
-success = 1
+obj_points_3d = []  # 3d point in real world space
+img_points_2d = []  # 2d points in image plane.
+
+video = cv2.VideoCapture(CALIB_VIDEO_PATH)
+frames_total = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+
+print('Processing', frames_total, 'frames ...')
+
 count = 0
-test_img = None
-while success:
+success = True
+demo_img = None
 
-    # function extract frames 
-    success, img = video_cap.read()
+while success:
+    success, img = video.read()
+
+    # Store demo image from middle frame
+    if count == frames_total // 2:
+        demo_img = img
     count += 1
 
-    # get test image from middle of data
-    if count == number_frames // 2:
-        test_img = img
-
-    # use every 10th element for calibration
-    if not success or count % 3 != 0:
+    # Use every n-th element for calibration
+    if not success or count % N_TH_FRAME_TO_USE != 0:
         continue
 
+    # Find chessboard corners
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # Find the chess board corners
     ret, corners = cv2.findChessboardCorners(gray, CALIBR_BOARD_SHAPE, None)
 
-    # If found, add object points, image points (after refining them)
+    # For identified corners, add object points and image points
     if ret:
-        objpoints.append(objp)
+        obj_points_3d.append(point_structure)
 
-        corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), CRITERIA)
-        imgpoints.append(corners2)
+        corners_refined = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), CRITERIA)
+        img_points_2d.append(corners_refined)
 
-        # Draw and display the corners
-        # img = cv2.drawChessboardCorners(img, BOARD_SIZE, corners2, ret)
-        # cv2.imshow('img', img)
-        # cv2.imwrite(os.path.join('cal-sample_' + str(count) + '.jpg'), img)
-        # cv2.waitKey(50)
+        # DEBUG: Draw and display corners
+        # cv2.imshow('Corners', cv2.drawChessboardCorners(img, CALIBR_BOARD_SHAPE, corners_refined, ret))
+        cv2.waitKey(50)
 
-video_cap.release()
-print('reading in complete, calculating matrix...')
+video.release()
 cv2.destroyAllWindows()
 
-gray = cv2.cvtColor(test_img, cv2.COLOR_BGR2GRAY)
-# calibrate camera
-ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+print('Video processing completed, calculating calibration matrix...')
 
+# Calibrate camera
+gray = cv2.cvtColor(demo_img, cv2.COLOR_BGR2GRAY)
+ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(obj_points_3d, img_points_2d, gray.shape[::-1], None, None)
+
+h, w = demo_img.shape[:2]
+camera_mtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
+
+# Save obtained camera matrix and distance coefficient
 np.save(CAMERA_DIST_COEFF, dist)
+np.save(CAMERA_MATRIX, camera_mtx)
+print('Camera matrix: ' + str(camera_mtx))
 
-h, w = test_img.shape[:2]
-newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
-
+# Calculate mean error
 mean_error = 0
-for i in range(len(objpoints)):
-    imgpoints2, _ = cv2.projectPoints(objpoints[i], rvecs[i], tvecs[i], mtx, dist)
-    error = cv2.norm(imgpoints[i], imgpoints2, cv2.NORM_L2) / len(imgpoints2)
+for i in range(len(obj_points_3d)):
+    tmp_proj_points, _ = cv2.projectPoints(obj_points_3d[i], rvecs[i], tvecs[i], mtx, dist)
+    error = cv2.norm(img_points_2d[i], tmp_proj_points, cv2.NORM_L2) / len(tmp_proj_points)
     mean_error += error
 
-print("total error: ", mean_error / len(objpoints))
-print(newcameramtx)
-
-#np.save(MAT_CAMERA, newcameramtx)
+print("Total error: ", mean_error / len(obj_points_3d))

@@ -12,7 +12,6 @@ MAX_FPS = 80
 
 # Chooses the frame to match points
 # 0: always first frame
-# 1: compare with itself
 # n > 0: use the n-th predecessor
 COMPARE_FRAME = 5
 

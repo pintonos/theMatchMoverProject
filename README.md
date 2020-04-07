@@ -34,3 +34,5 @@ by https://markhedleyjones.com/projects/calibration-checkerboard-collection
 - https://bitesofcode.wordpress.com/2017/09/12/augmented-reality-with-python-and-opencv-part-1/
 
 - https://avisingh599.github.io/vision/monocular-vo/
+
+- https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_features_harris/py_features_harris.html

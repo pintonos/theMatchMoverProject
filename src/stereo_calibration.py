@@ -13,17 +13,7 @@ MAX_FPS = 80
 # Chooses the frame to match points
 # 0: always first frame
 # n > 0: use the n-th predecessor
-COMPARE_FRAME = 5
-
-OBJECT_POSITION = np.asarray(np.float32([1, 1.7, 27]))
-
-# Orientation matrix -60 degrees about x-axis
-# More explanation https://www.andre-gaschler.com/rotationconverter/
-OBJECT_ORIENTATION = np.float32([
-    [1, 0, 0],
-    [0, 0.5, 0.8660254],
-    [0, -0.8660254, 0.5]
-])
+COMPARE_FRAME = 0
 
 # Points for a 3D cube
 img_points_3d = get_3d_cube_points()
@@ -85,8 +75,8 @@ while success and count < MAX_FPS:
     frame = draw(frame, proj_points_img_2)
 
     # DEBUG: Plot frame
-    # cv2.imshow('current_frame', frame)
-    # cv2.waitKey(1)
+    cv2.imshow('current_frame', frame)
+    cv2.waitKey(1)
     out.write(frame)
 
 video.release()

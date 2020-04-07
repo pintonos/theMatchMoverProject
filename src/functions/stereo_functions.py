@@ -29,7 +29,7 @@ def get_E_from_F(pts1, pts2, K):
     return E
 
 
-def stereo_view_map(pts1, pts2, t_vec, K, dist, img_points_3d):
+def stereo_view_map(pts1, pts2, t_vec, K, dist, img_points_3d, obj_orientation):
     # More explanation at https://stackoverflow.com/questions/33906111/how-do-i-estimate-positions-of-two-cameras-in-opencv
 
     # Normalize for Essential Matrix calculation
@@ -43,7 +43,8 @@ def stereo_view_map(pts1, pts2, t_vec, K, dist, img_points_3d):
     points, R, t, _ = cv2.recoverPose(E, pts1, pts2, K)
 
     # Project world coordinates to frame 2
-    t += np.expand_dims(t_vec, axis=1)  # add scaling factor
+    t = np.add(t, np.expand_dims(t_vec, axis=1))
+    R = R @ obj_orientation
     r_vec, _ = cv2.Rodrigues(R, dst=dist)
     img_points_2d, _ = cv2.projectPoints(img_points_3d, r_vec, t, K, dist)
 

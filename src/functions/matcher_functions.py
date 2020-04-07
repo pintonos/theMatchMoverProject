@@ -90,7 +90,7 @@ def get_points(img1, img2, detector='SIFT', filter=True, matcher='FLANN'):
     # Filter images to remove noise like a gaussian, but preserves edges
     if filter:
         gray1 = cv2.bilateralFilter(gray1, 5, 50, 50)
-        gray2 = cv2.bilateralFilter(img2, 5, 50, 50)
+        gray2 = cv2.bilateralFilter(gray2, 5, 50, 50)
 
     # Find the keypoints and descriptors
     kp1, kp2 = None, None
@@ -117,5 +117,10 @@ def get_points(img1, img2, detector='SIFT', filter=True, matcher='FLANN'):
 
     if pts1 is None or pts2 is None:
         raise Exception('Unknown matcher [' + str(matcher) + ']')
+
+    # Subpixel refinement
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.001)
+    pts1 = cv2.cornerSubPix(gray1, np.float32(pts1), (5, 5), (-1, -1), criteria)
+    pts2 = cv2.cornerSubPix(gray2, np.float32(pts2), (5, 5), (-1, -1), criteria)
 
     return pts1, pts2

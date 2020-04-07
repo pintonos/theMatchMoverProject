@@ -12,6 +12,16 @@ SCALING_FACTOR = 9
 CALIBR_SQUARE_SIZE_MM = 25
 CALIBR_BOARD_SHAPE = (8, 6)
 
+OBJECT_POSITION = np.asarray(np.float32([1, 1.7, 27]))
+
+# Orientation matrix -60 degrees about x-axis
+# More explanation https://www.andre-gaschler.com/rotationconverter/
+OBJECT_ORIENTATION = np.float32([
+    [1, 0, 0],
+    [0, 0.5, 0.8660254],
+    [0, -0.8660254, 0.5]
+])
+
 
 def get_obj_point_structure():
     """Prepare object points dependant of BOARD_SIZE"""

@@ -22,13 +22,13 @@ match_points_3 = pd.read_csv('../' + MANUAL_MATCH_POINTS_3, sep=',').values * 2
 img_points_3d = get_3d_cube_points()
 
 # Project world coordinates to frame 1
-r_vec_id, _ = cv2.Rodrigues(np.identity(3))
-t_vec = np.float32(np.asarray([0, 0, SCALING_FACTOR]))
+r_vec_id, _ = cv2.Rodrigues(OBJECT_ORIENTATION)
+t_vec = OBJECT_POSITION
 proj_points_img_1, _ = cv2.projectPoints(img_points_3d, r_vec_id, t_vec, K, dist)
 
 # Map points to second and third image
-proj_points_img_2 = stereo_view_map(match_points_1, match_points_2, t_vec, K, dist, img_points_3d)
-proj_points_img_3 = stereo_view_map(match_points_1, match_points_3, t_vec, K, dist, img_points_3d)
+proj_points_img_2 = stereo_view_map(match_points_1, match_points_2, t_vec, K, dist, img_points_3d, OBJECT_ORIENTATION)
+proj_points_img_3 = stereo_view_map(match_points_1, match_points_3, t_vec, K, dist, img_points_3d, OBJECT_ORIENTATION)
 
 # Read and plot images
 img_1 = cv2.imread('../' + DATA_PATH + 'img_1.jpg')

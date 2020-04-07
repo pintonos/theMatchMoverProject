@@ -7,15 +7,6 @@ np.set_printoptions(suppress=True)
 if K is None or dist is None:
     raise Exception('Camera matrix or distortion coefficient not found')
 
-# Orientation matrix -60 degrees about x-axis
-# More explanation https://www.andre-gaschler.com/rotationconverter/
-OBJECT_POSITION = np.asarray(np.float32([1, 1.7, 27]))
-OBJECT_ORIENTATION = np.float32([
-    [1, 0, 0],
-    [0, 0.5, 0.8660254],
-    [0, -0.8660254, 0.5]
-])
-
 # Points for a 3D cube
 img_points_3d = get_3d_cube_points()
 
@@ -34,8 +25,8 @@ match_points_1, match_points_2 = get_points(img_1, img_2)
 match_points_1_3, match_points_3 = get_points(img_2, img_3)
 
 # Project points to 3d
-proj_points_img_2 = stereo_view_map(match_points_1, match_points_2, t_vec, K, dist, img_points_3d)
-proj_points_img_3 = stereo_view_map(match_points_1_3, match_points_3, t_vec, K, dist, img_points_3d)
+proj_points_img_2 = stereo_view_map(match_points_1, match_points_2, t_vec, K, dist, img_points_3d, OBJECT_ORIENTATION)
+proj_points_img_3 = stereo_view_map(match_points_1_3, match_points_3, t_vec, K, dist, img_points_3d, OBJECT_ORIENTATION)
 
 # Plot images
 draw_points(img_1, match_points_1)

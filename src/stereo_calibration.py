@@ -10,6 +10,12 @@ if K is None or dist is None:
 SKIP_FPS = 30
 MAX_FPS = 80
 
+# Chooses the frame to match points
+# 0: always first frame
+# 1: compare with itself
+# n > 0: use the n-th predecessor
+COMPARE_FRAME = 5
+
 OBJECT_POSITION = np.asarray(np.float32([1, 1.7, 27]))
 
 # Orientation matrix -60 degrees about x-axis
@@ -49,6 +55,8 @@ out.write(first_frame)
 # Project coordinates to every following frame
 count = 0
 frame = 0
+
+compare_frames = [first_frame]
 while success and count < MAX_FPS:
     count += 1
     success, frame = video.read()
@@ -57,8 +65,11 @@ while success and count < MAX_FPS:
     if count < SKIP_FPS:
         continue
 
+    if COMPARE_FRAME > 0:
+        compare_frames = compare_frames[-COMPARE_FRAME:]
+
     # Automatic point matching
-    match_points_1, match_points_2 = get_points(first_frame, frame, 'FAST', True, 'FLANN')
+    match_points_1, match_points_2 = get_points(compare_frames[0], frame, 'FAST', True, 'FLANN')
 
     E, _ = cv2.findEssentialMat(match_points_1, match_points_2, method=cv2.RANSAC, prob=0.999, threshold=1, cameraMatrix=K)
 
@@ -71,6 +82,7 @@ while success and count < MAX_FPS:
     r_vec, _ = cv2.Rodrigues(R, dst=dist)
     proj_points_img_2, _ = cv2.projectPoints(img_points_3d, r_vec, t, K, dist)
 
+    compare_frames.append(frame)
     frame = draw(frame, proj_points_img_2)
 
     # DEBUG: Plot frame

@@ -137,7 +137,7 @@ def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.
     if matcher == Matcher.FLANN:
         pts1, pts2, matches = get_flann_matches(kp1, des1, kp2, des2, detector)
     elif matcher == Matcher.BRUTE_FORCE:
-        pts1, pts2, matches = get_brute_force_matches(kp1, des1, kp2, des2, detector)
+        pts1, pts2, matches = get_brute_force_matches(kp1, des1, kp2, des2, detector, ratioTest=False)
 
     if pts1 is None or pts2 is None:
         raise Exception('Unknown matcher [' + str(matcher) + ']')
@@ -148,7 +148,8 @@ def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.
     pts2 = cv2.cornerSubPix(gray2, np.float32(pts2), (5, 5), (-1, -1), criteria)
 
     if showMatches:
-        img3 = cv2.drawMatches(img1, kp1, img2, kp2, matches[:300], None, flags=2)
+        matches = sorted(matches, key=lambda x: x.distance)
+        img3 = cv2.drawMatches(img1, kp1, img2, kp2, matches[:100], None, flags=2)
         plt.imshow(img3), plt.show()
 
     return pts1, pts2

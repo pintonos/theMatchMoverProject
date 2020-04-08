@@ -58,7 +58,7 @@ while success and count < MAX_FPS:
         compare_frames = compare_frames[-COMPARE_FRAME:]
 
     # Automatic point matching
-    match_points_1, match_points_2 = get_points(compare_frames[0], frame, Detector.FAST, True, Matcher.FLANN)
+    match_points_1, match_points_2 = get_points(compare_frames[0], frame, Detector.FAST, True, Matcher.FLANN, showMatches=True)
 
     E, _ = cv2.findEssentialMat(match_points_1, match_points_2, method=cv2.RANSAC, prob=0.999, threshold=1, cameraMatrix=K)
 

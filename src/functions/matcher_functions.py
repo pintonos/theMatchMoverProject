@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from functions import *
 from util import *
+from matplotlib import pyplot as plt
 
 """ Functions required for automatic point matching
 
@@ -26,26 +27,27 @@ def get_harris_corner(img):
 def lowest_ratio_test(kp1, kp2, matches):
     pts1 = []
     pts2 = []
-
+    good = []
     # Ratio test as per Lowe's paper
     for i, match in enumerate(matches):
         if len(match) < 2:
             continue
         (m, n) = match
-        if m.distance < 0.8 * n.distance:  # TODO tweak ratio
+        if m.distance < 0.7 * n.distance:  # TODO tweak ratio
             pts2.append(kp2[m.trainIdx].pt)
             pts1.append(kp1[m.queryIdx].pt)
+            good.append(m)
 
-    return pts1, pts2
+    return pts1, pts2, good
 
 
 def get_flann_matches(kp1, des1, kp2, des2, detector):
     index_params = None
 
     # FLANN parameters
-    if detector == Detector.SIFT or detector == Detector.SURF:
+    if detector == Detector.SIFT or detector == Detector.SURF or detector == Detector.FAST:
         index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
-    elif detector == Detector.FAST or detector == Detector.ORB:
+    elif detector == Detector.ORB:
         index_params = dict(algorithm=FLANN_INDEX_LSH,
                             table_number=12,  # TODO play around
                             key_size=20,
@@ -60,32 +62,43 @@ def get_flann_matches(kp1, des1, kp2, des2, detector):
     matches = flann.knnMatch(des1, des2, k=2)
 
     # Filter for good matches
-    pts1, pts2 = lowest_ratio_test(kp1, kp2, matches)
+    pts1, pts2, matches = lowest_ratio_test(kp1, kp2, matches)
 
-    return np.int32(pts1), np.int32(pts2)
+    return np.int32(pts1), np.int32(pts2), matches
 
 
-def get_brute_force_matches(kp1, des1, kp2, des2):
+def get_brute_force_matches(kp1, des1, kp2, des2, detector, ratioTest=False):
     # Create BFMatcher object
-    bf = cv2.BFMatcher(cv2.NORM_HAMMING,  # NORM_L2 is good for SIFT/SURF, use NORM_HAMMING for ORB/BRIEF
-                       crossCheck=True)  # crossCheck is an alternative to Lowe's ratio test
+    # NORM_L2 is good for SIFT/SURF, use NORM_HAMMING for ORB/BRIEF
+    if detector == Detector.SIFT or detector == Detector.SURF or detector == Detector.FAST:
+        bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=not ratioTest)
+    elif detector == Detector.ORB:
+        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=not ratioTest)  # crossCheck is an alternative to Lowe's ratio test
 
-    # Match descriptors
-    matches = bf.match(des1, des2)
+    if ratioTest:
+        matches = bf.knnMatch(des1, des2, k=2)
 
-    pts1, pts2 = [], []
-    matches = sorted(matches, key=lambda x: x.distance)
-    num_good_matches = len(matches) // 2  # TODO tweak ratio
+        # Filter for good matches
+        pts1, pts2, good_matches = lowest_ratio_test(kp1, kp2, matches)
+    else:
+        # Match descriptors
+        matches = bf.match(des1, des2)
 
-    matches = matches[:num_good_matches]  # use only first half,
-    for i, match in enumerate(matches):
-        pts2.append(kp2[match.trainIdx].pt)
-        pts1.append(kp1[match.queryIdx].pt)
+        pts1, pts2 = [], []
+        matches = sorted(matches, key=lambda x: x.distance)
+        num_good_matches = len(matches) // 2  # TODO tweak ratio
 
-    return np.int32(pts1), np.int32(pts2)
+        matches = matches[:num_good_matches]  # use only first half,
+        for i, match in enumerate(matches):
+            pts2.append(kp2[match.trainIdx].pt)
+            pts1.append(kp1[match.queryIdx].pt)
+
+        good_matches = matches[:num_good_matches]
+
+    return np.int32(pts1), np.int32(pts2), good_matches
 
 
-def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.FLANN):
+def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.FLANN, showMatches=False):
     gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
     gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
 
@@ -107,9 +120,10 @@ def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.
         kp2, des2 = surf.detectAndCompute(gray2, None)
     elif detector == Detector.FAST:
         fast = cv2.FastFeatureDetector_create()
-        br = cv2.BRISK_create()
-        kp1, des1 = br.compute(gray1, fast.detect(gray1, None))
-        kp2, des2 = br.compute(gray2, fast.detect(gray2, None))
+        # br = cv2.BRISK_create()
+        sift = cv2.xfeatures2d.SIFT_create()  # https://stackoverflow.com/questions/17967950/improve-matching-of-feature-points-with-opencv
+        kp1, des1 = sift.compute(gray1, fast.detect(gray1, None))
+        kp2, des2 = sift.compute(gray2, fast.detect(gray2, None))
     elif detector == Detector.ORB:
         orb = cv2.ORB_create()
         kp1, des1 = orb.detectAndCompute(gray1, None)
@@ -119,11 +133,11 @@ def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.
         raise Exception('Unknown detector [' + str(detector) + ']')
 
     # Match points
-    pts1, pts2 = None, None
+    pts1, pts2, matches = None, None, None
     if matcher == Matcher.FLANN:
-        pts1, pts2 = get_flann_matches(kp1, des1, kp2, des2, detector)
+        pts1, pts2, matches = get_flann_matches(kp1, des1, kp2, des2, detector)
     elif matcher == Matcher.BRUTE_FORCE:
-        pts1, pts2 = get_brute_force_matches(kp1, des1, kp2, des2)
+        pts1, pts2, matches = get_brute_force_matches(kp1, des1, kp2, des2, detector)
 
     if pts1 is None or pts2 is None:
         raise Exception('Unknown matcher [' + str(matcher) + ']')
@@ -132,5 +146,9 @@ def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.001)
     pts1 = cv2.cornerSubPix(gray1, np.float32(pts1), (5, 5), (-1, -1), criteria)
     pts2 = cv2.cornerSubPix(gray2, np.float32(pts2), (5, 5), (-1, -1), criteria)
+
+    if showMatches:
+        img3 = cv2.drawMatches(img1, kp1, img2, kp2, matches[:300], None, flags=2)
+        plt.imshow(img3), plt.show()
 
     return pts1, pts2

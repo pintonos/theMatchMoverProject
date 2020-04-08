@@ -13,7 +13,7 @@ MAX_FPS = 80
 # Chooses the frame to match points
 # 0: always first frame
 # n > 0: use the n-th predecessor
-COMPARE_FRAME = 0
+COMPARE_FRAME = 15
 
 # Points for a 3D cube
 img_points_3d = get_3d_cube_points()
@@ -58,7 +58,7 @@ while success and count < MAX_FPS:
         compare_frames = compare_frames[-COMPARE_FRAME:]
 
     # Automatic point matching
-    match_points_1, match_points_2 = get_points(compare_frames[0], frame, 'FAST', True, 'FLANN')
+    match_points_1, match_points_2 = get_points(compare_frames[0], frame, Detector.FAST, True, Matcher.FLANN)
 
     E, _ = cv2.findEssentialMat(match_points_1, match_points_2, method=cv2.RANSAC, prob=0.999, threshold=1, cameraMatrix=K)
 

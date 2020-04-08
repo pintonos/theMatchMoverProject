@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+from functions import *
+from util import *
 
 """ Functions required for automatic point matching
 
@@ -41,9 +43,9 @@ def get_flann_matches(kp1, des1, kp2, des2, detector):
     index_params = None
 
     # FLANN parameters
-    if detector == 'SIFT':
+    if detector == Detector.SIFT or detector == Detector.SURF:
         index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
-    elif detector == 'FAST':
+    elif detector == Detector.FAST or detector == Detector.ORB:
         index_params = dict(algorithm=FLANN_INDEX_LSH,
                             table_number=12,  # TODO play around
                             key_size=20,
@@ -83,7 +85,7 @@ def get_brute_force_matches(kp1, des1, kp2, des2):
     return np.int32(pts1), np.int32(pts2)
 
 
-def get_points(img1, img2, detector='SIFT', filter=True, matcher='FLANN'):
+def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.FLANN):
     gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
     gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
 
@@ -95,24 +97,32 @@ def get_points(img1, img2, detector='SIFT', filter=True, matcher='FLANN'):
     # Find the keypoints and descriptors
     kp1, kp2 = None, None
     des1, des2 = None, None
-    if detector == 'SIFT':
+    if detector == Detector.SIFT:
         sift = cv2.xfeatures2d.SIFT_create()
         kp1, des1 = sift.detectAndCompute(gray1, None)
         kp2, des2 = sift.detectAndCompute(gray2, None)
-    elif detector == 'FAST':
+    elif detector == Detector.SURF:
+        surf = cv2.xfeatures2d.SURF_create(400)
+        kp1, des1 = surf.detectAndCompute(gray1, None)
+        kp2, des2 = surf.detectAndCompute(gray2, None)
+    elif detector == Detector.FAST:
         fast = cv2.FastFeatureDetector_create()
         br = cv2.BRISK_create()
         kp1, des1 = br.compute(gray1, fast.detect(gray1, None))
         kp2, des2 = br.compute(gray2, fast.detect(gray2, None))
+    elif detector == Detector.ORB:
+        orb = cv2.ORB_create()
+        kp1, des1 = orb.detectAndCompute(gray1, None)
+        kp2, des2 = orb.detectAndCompute(gray2, None)
 
     if kp1 is None or kp2 is None or des1 is None or des2 is None:
         raise Exception('Unknown detector [' + str(detector) + ']')
 
     # Match points
     pts1, pts2 = None, None
-    if matcher == 'FLANN':
+    if matcher == Matcher.FLANN:
         pts1, pts2 = get_flann_matches(kp1, des1, kp2, des2, detector)
-    elif matcher == 'BRUTE_FORCE':
+    elif matcher == Matcher.BRUTE_FORCE:
         pts1, pts2 = get_brute_force_matches(kp1, des1, kp2, des2)
 
     if pts1 is None or pts2 is None:

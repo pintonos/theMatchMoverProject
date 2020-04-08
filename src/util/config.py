@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from enum import Enum
 
 """ Contains project config
 Paths for INPUT and OUTPUT video files
@@ -54,6 +55,18 @@ MANUAL_MATCH_POINTS_2 = TMP_PATH + 'manual_pt2.csv'
 MANUAL_MATCH_POINTS_3 = TMP_PATH + 'manual_pt3.csv'
 
 K, dist = None, None
+
+
+class Detector(Enum):
+    SIFT = 1
+    SURF = 2
+    FAST = 3
+    ORB = 4
+
+
+class Matcher(Enum):
+    FLANN = 1
+    BRUTE_FORCE = 2
 
 
 def load_interm(camera_matrix, camera_dist_coeff):

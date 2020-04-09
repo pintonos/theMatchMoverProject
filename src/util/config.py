@@ -13,7 +13,7 @@ SCALING_FACTOR = 9
 CALIBR_SQUARE_SIZE_MM = 25
 CALIBR_BOARD_SHAPE = (8, 6)
 
-OBJECT_POSITION = np.asarray(np.float32([1, 1.7, 27]))
+OBJECT_POSITION = np.asarray(np.float32([0.9, 1.9, 29]))
 
 # Orientation matrix -60 degrees about x-axis
 # More explanation https://www.andre-gaschler.com/rotationconverter/

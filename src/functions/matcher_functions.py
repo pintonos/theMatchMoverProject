@@ -24,7 +24,7 @@ def get_harris_corner(img):
     return dst
 
 
-def lowest_ratio_test(kp1, kp2, matches):
+def lowes_ratio_test(kp1, kp2, matches):
     pts1 = []
     pts2 = []
     good = []
@@ -62,7 +62,7 @@ def get_flann_matches(kp1, des1, kp2, des2, detector):
     matches = flann.knnMatch(des1, des2, k=2)
 
     # Filter for good matches
-    pts1, pts2, matches = lowest_ratio_test(kp1, kp2, matches)
+    pts1, pts2, matches = lowes_ratio_test(kp1, kp2, matches)
 
     return np.int32(pts1), np.int32(pts2), matches
 
@@ -79,7 +79,7 @@ def get_brute_force_matches(kp1, des1, kp2, des2, detector, ratioTest=False):
         matches = bf.knnMatch(des1, des2, k=2)
 
         # Filter for good matches
-        pts1, pts2, good_matches = lowest_ratio_test(kp1, kp2, matches)
+        pts1, pts2, good_matches = lowes_ratio_test(kp1, kp2, matches)
     else:
         # Match descriptors
         matches = bf.match(des1, des2)
@@ -137,7 +137,7 @@ def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.
     if matcher == Matcher.FLANN:
         pts1, pts2, matches = get_flann_matches(kp1, des1, kp2, des2, detector)
     elif matcher == Matcher.BRUTE_FORCE:
-        pts1, pts2, matches = get_brute_force_matches(kp1, des1, kp2, des2, detector, ratioTest=False)
+        pts1, pts2, matches = get_brute_force_matches(kp1, des1, kp2, des2, detector, ratioTest=True)
 
     if pts1 is None or pts2 is None:
         raise Exception('Unknown matcher [' + str(matcher) + ']')
@@ -153,5 +153,7 @@ def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.
         img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
         img3 = cv2.drawMatches(img1, kp1, img2, kp2, matches[:100], None, flags=2)
         plt.imshow(img3), plt.show()
-
+    
+    print(pts2.shape)
+    
     return pts1, pts2

@@ -7,13 +7,7 @@ np.set_printoptions(suppress=True)
 if K is None or dist is None:
     raise Exception('Camera matrix or distortion coefficient not found')
 
-SKIP_FPS = 30
-MAX_FPS = 80
-
-# Chooses the frame to match points
-# 0: always first frame
-# n > 0: use the n-th predecessor
-COMPARE_FRAME = 15
+MAX_FPS = 50
 
 # Points for a 3D cube
 img_points_3d = get_3d_cube_points()
@@ -31,7 +25,8 @@ fourcc = cv2.VideoWriter_fourcc(*'XVID')
 out = cv2.VideoWriter(VIDEO_OUT_STEREO_PATH, fourcc, 20.0, (frame_width, frame_height))
 
 # Project world coordinates to first frame
-r_vec_id, _ = cv2.Rodrigues(OBJECT_ORIENTATION)
+R = OBJECT_ORIENTATION
+r_vec_id, _ = cv2.Rodrigues(R)
 t_vec = OBJECT_POSITION
 proj_points_2d, _ = cv2.projectPoints(img_points_3d, r_vec_id, t_vec, K, dist)
 
@@ -45,36 +40,25 @@ out.write(first_frame)
 count = 0
 frame = 0
 
-compare_frames = [first_frame]
+ref_img = first_frame
 while success and count < MAX_FPS:
     count += 1
+
+    # take previous frame as reference
+    if count != 1:
+        ref_img = frame
     success, frame = video.read()
     print("Frame: {}/{}".format(count, frames_total))
 
-    if count < SKIP_FPS:
-        continue
-
-    if COMPARE_FRAME > 0:
-        compare_frames = compare_frames[-COMPARE_FRAME:]
-
     # Automatic point matching
-    match_points_1, match_points_2 = get_points(compare_frames[0], frame, Detector.FAST, True, Matcher.FLANN, showMatches=True)
+    match_points_1, match_points_2 = get_points(ref_img, frame, matcher=Matcher.BRUTE_FORCE, showMatches=False)
+    
+    R, t_vec, proj_points_img_2 = stereo_view_map(match_points_1, match_points_2, t_vec, K, dist, img_points_3d, R)
 
-    E, _ = cv2.findEssentialMat(match_points_1, match_points_2, method=cv2.RANSAC, prob=0.999, threshold=1, cameraMatrix=K)
-
-    # Recover relative camera rotation and translation from essential matrix and the corresponding points
-    _, R, t, _ = cv2.recoverPose(E, match_points_1, match_points_2, K)
-
-    # Project world coordinates to frame
-    t += np.expand_dims(t_vec, axis=1)  # add scaling factor
-    R = R @ OBJECT_ORIENTATION
-    r_vec, _ = cv2.Rodrigues(R, dst=dist)
-    proj_points_img_2, _ = cv2.projectPoints(img_points_3d, r_vec, t, K, dist)
-
-    compare_frames.append(frame)
     frame = draw(frame, proj_points_img_2)
 
     # DEBUG: Plot frame
+    draw_points(frame, match_points_2)
     cv2.imshow('current_frame', frame)
     cv2.waitKey(1)
     out.write(frame)

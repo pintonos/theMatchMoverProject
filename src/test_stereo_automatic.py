@@ -16,17 +16,17 @@ t_vec = OBJECT_POSITION
 proj_points_2d, _ = cv2.projectPoints(img_points_3d, r_vec_id, t_vec, K, dist)
 
 # Read images
-img_1 = cv2.imread('../' + DATA_PATH + 'img_1.jpg')
-img_2 = cv2.imread('../' + DATA_PATH + 'img_2.jpg')
-img_3 = cv2.imread('../' + DATA_PATH + 'img_3.jpg')
+img_1 = cv2.imread('./' + DATA_PATH + 'img_1.jpg')
+img_2 = cv2.imread('./' + DATA_PATH + 'img_2.jpg')
+img_3 = cv2.imread('./' + DATA_PATH + 'img_3.jpg')
 
 # Match points automatically
 match_points_1, match_points_2 = get_points(img_1, img_2)
 match_points_1_3, match_points_3 = get_points(img_2, img_3)
 
 # Project points to 3d
-proj_points_img_2 = stereo_view_map(match_points_1, match_points_2, t_vec, K, dist, img_points_3d, OBJECT_ORIENTATION)
-proj_points_img_3 = stereo_view_map(match_points_1_3, match_points_3, t_vec, K, dist, img_points_3d, OBJECT_ORIENTATION)
+R, t, proj_points_img_2 = stereo_view_map(match_points_1, match_points_2, t_vec, K, dist, img_points_3d, OBJECT_ORIENTATION)
+R, t, proj_points_img_3 = stereo_view_map(match_points_1_3, match_points_3, t, K, dist, img_points_3d, R)
 
 # Plot images
 draw_points(img_1, match_points_1)

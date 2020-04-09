@@ -1,4 +1,6 @@
 /resources/data/
 /.idea/
 /src/__pycache__
-/resources/tmp/output.avi
+*.avi
+*.npy
+*.pyc

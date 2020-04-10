@@ -9,8 +9,8 @@ video = cv2.VideoCapture('../' + VIDEO_PATH)
 frames_total = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 
 frame_1 = 0
-frame_2 = frames_total // 2 + 4
-frame_3 = frames_total - 1
+frame_2 = 60
+frame_3 = 62
 
 count = 0
 success = True

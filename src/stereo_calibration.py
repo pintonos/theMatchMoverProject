@@ -7,7 +7,8 @@ np.set_printoptions(suppress=True)
 if K is None or dist is None:
     raise Exception('Camera matrix or distortion coefficient not found')
 
-MAX_FPS = 50
+MAX_FPS = 100
+COMPARE_FRAME = 30
 
 # Points for a 3D cube
 img_points_3d = get_3d_cube_points()
@@ -40,20 +41,28 @@ out.write(first_frame)
 count = 0
 frame = 0
 
-ref_img = first_frame
+compare_frames = [first_frame]
+compare_R = [R]
+compare_t = [t_vec]
 while success and count < MAX_FPS:
     count += 1
 
-    # take previous frame as reference
-    if count != 1:
-        ref_img = frame
     success, frame = video.read()
     print("Frame: {}/{}".format(count, frames_total))
 
+    if COMPARE_FRAME > 0:
+        compare_frames = compare_frames[-COMPARE_FRAME:]
+        compare_R = compare_R[-COMPARE_FRAME:]
+        compare_t = compare_t[-COMPARE_FRAME:]
+
     # Automatic point matching
-    match_points_1, match_points_2 = get_points(ref_img, frame, matcher=Matcher.BRUTE_FORCE, showMatches=False)
-    
-    R, t_vec, proj_points_img_2 = stereo_view_map(match_points_1, match_points_2, t_vec, K, dist, img_points_3d, R)
+    match_points_1, match_points_2 = get_points(compare_frames[0], frame, detector=Detector.FAST, matcher=Matcher.FLANN, showMatches=False)
+
+    R_tmp, t_vec_tmp, proj_points_img_2 = stereo_view_map(match_points_1, match_points_2, compare_t[0], K, dist, img_points_3d, compare_R[0])
+
+    compare_frames.append(frame)
+    compare_R.append(R_tmp)
+    compare_t.append(t_vec_tmp)
 
     frame = draw(frame, proj_points_img_2)
 

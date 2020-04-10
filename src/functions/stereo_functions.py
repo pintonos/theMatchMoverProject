@@ -36,8 +36,13 @@ def stereo_view_map(pts1, pts2, t_vec, K, dist, img_points_3d, obj_orientation):
     # pts_l_norm = cv2.undistortPoints(np.expand_dims(pts1, axis=1).astype(dtype=np.float32), cameraMatrix=K, distCoeffs=dist)
     # pts_r_norm = cv2.undistortPoints(np.expand_dims(pts2, axis=1).astype(dtype=np.float32), cameraMatrix=K, distCoeffs=dist)
 
-    E, _ = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=1,
+    E, _ = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=0.1,
                                 cameraMatrix=K)  # TODO test different settings
+
+    # refine mapping
+    pts1 = np.reshape(pts1, (1, len(pts1), 2))
+    pts2 = np.reshape(pts2, (1, len(pts2), 2))
+    pts1, pts2 = cv2.correctMatches(E, pts1, pts2)
 
     # Recover relative camera rotation and translation from E and the corresponding points
     points, R, t, _ = cv2.recoverPose(E, pts1, pts2, K)

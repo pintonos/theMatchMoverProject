@@ -24,7 +24,7 @@ img_3 = cv2.imread('./' + DATA_PATH + 'img_3.jpg')
 match_points_1, match_points_2 = get_points(img_1, img_2, filter=True, detector=Detector.FAST,
                                             matcher=Matcher.FLANN)
 match_points_1_3, match_points_3 = get_points(img_1, img_3, filter=True, detector=Detector.FAST,
-                                              matcher=Matcher.FLANN)
+                                            matcher=Matcher.FLANN)
 
 # Project points to 3d
 R, t, proj_points_img_2 = stereo_view_map(match_points_1, match_points_2, t_vec, K, dist, img_points_3d,

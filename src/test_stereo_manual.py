@@ -27,8 +27,8 @@ t_vec = OBJECT_POSITION
 proj_points_img_1, _ = cv2.projectPoints(img_points_3d, r_vec_id, t_vec, K, dist)
 
 # Map points to second and third image
-proj_points_img_2 = stereo_view_map(match_points_1, match_points_2, t_vec, K, dist, img_points_3d, OBJECT_ORIENTATION)
-proj_points_img_3 = stereo_view_map(match_points_1, match_points_3, t_vec, K, dist, img_points_3d, OBJECT_ORIENTATION)
+proj_points_img_2 = stereo_view_map(match_points_1, match_points_2, img_points_3d, t_vec, OBJECT_ORIENTATION, K, dist)
+proj_points_img_3 = stereo_view_map(match_points_1, match_points_3, img_points_3d, t_vec, OBJECT_ORIENTATION, K, dist)
 
 # Read and plot images
 img_1 = cv2.imread('../' + DATA_PATH + 'img_1.jpg')

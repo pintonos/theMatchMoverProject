@@ -27,10 +27,10 @@ match_points_1_3, match_points_3 = get_points(img_1, img_3, filter=True, detecto
                                             matcher=Matcher.FLANN)
 
 # Project points to 3d
-R, t, proj_points_img_2 = stereo_view_map(match_points_1, match_points_2, t_vec, K, dist, img_points_3d,
-                                          OBJECT_ORIENTATION)
+R, t, proj_points_img_2 = stereo_view_map(match_points_1, match_points_2, img_points_3d, t_vec, OBJECT_ORIENTATION, K,
+                                          dist)
 print(t)
-R, t, proj_points_img_3 = stereo_view_map(match_points_1_3, match_points_3, t, K, dist, img_points_3d, R)
+R, t, proj_points_img_3 = stereo_view_map(match_points_1_3, match_points_3, img_points_3d, t, R, K, dist)
 print(t)
 
 # Plot images

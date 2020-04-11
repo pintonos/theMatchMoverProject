@@ -15,6 +15,9 @@ FLANN_INDEX_LSH = 6
 
 
 def get_harris_corner(img):
+    """
+    not used
+    """
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     gray = np.float32(gray)
     dst = cv2.cornerHarris(gray, 2, 3, 0.04)
@@ -24,16 +27,23 @@ def get_harris_corner(img):
     return dst
 
 
-def lowes_ratio_test(kp1, kp2, matches):
+def lowes_ratio_test(kp1, kp2, matches, threshold=0.8):
+    """
+    Ratio test as per Lowe's paper.
+    :param threshold: threshold to compare matches
+    :param kp1: keypoints image 1
+    :param kp2: keypoints image 2
+    :param matches: matches between images
+    :return: good matches
+    """
     pts1 = []
     pts2 = []
     good = []
-    # Ratio test as per Lowe's paper
     for i, match in enumerate(matches):
         if len(match) < 2:
             continue
         (m, n) = match
-        if m.distance < 0.7 * n.distance:  # TODO tweak ratio
+        if m.distance < threshold * n.distance:  # TODO tweak ratio
             pts2.append(kp2[m.trainIdx].pt)
             pts1.append(kp1[m.queryIdx].pt)
             good.append(m)
@@ -45,13 +55,13 @@ def get_flann_matches(kp1, des1, kp2, des2, detector):
     index_params = None
 
     # FLANN parameters
-    if detector == Detector.SIFT or detector == Detector.SURF or detector == Detector.FAST:
-        index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
-    elif detector == Detector.ORB:
+    if detector == Detector.ORB:
         index_params = dict(algorithm=FLANN_INDEX_LSH,
                             table_number=12,  # TODO play around
                             key_size=20,
                             multi_probe_level=2)
+    else:
+        index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
 
     if index_params is None:
         raise Exception('Unknown detector [' + str(detector) + ']')
@@ -67,28 +77,28 @@ def get_flann_matches(kp1, des1, kp2, des2, detector):
     return np.int32(pts1), np.int32(pts2), matches
 
 
-def get_brute_force_matches(kp1, des1, kp2, des2, detector, ratioTest=False):
-    # Create BFMatcher object
-    # NORM_L2 is good for SIFT/SURF, use NORM_HAMMING for ORB/BRIEF
-    if detector == Detector.SIFT or detector == Detector.SURF or detector == Detector.FAST:
+def get_brute_force_matches(kp1, des1, kp2, des2, detector, ratioTest=True):
+
+    if detector == Detector.ORB:
+        # TODO try NORM_HAMMING2
+        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=not ratioTest)
+    else:
+        # TODO try NORM_L1
         bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=not ratioTest)
-    elif detector == Detector.ORB:
-        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=not ratioTest)  # crossCheck is an alternative to Lowe's ratio test
 
     if ratioTest:
         matches = bf.knnMatch(des1, des2, k=2)
-
-        # Filter for good matches
         pts1, pts2, good_matches = lowes_ratio_test(kp1, kp2, matches)
     else:
         # Match descriptors
         matches = bf.match(des1, des2)
 
         pts1, pts2 = [], []
+        # sort matches and drop worst ones
         matches = sorted(matches, key=lambda x: x.distance)
         num_good_matches = len(matches) // 2  # TODO tweak ratio
 
-        matches = matches[:num_good_matches]  # use only first half,
+        matches = matches[:num_good_matches]
         for i, match in enumerate(matches):
             pts2.append(kp2[match.trainIdx].pt)
             pts1.append(kp1[match.queryIdx].pt)
@@ -105,6 +115,7 @@ def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.
 
     # Filter images to remove noise like a gaussian, but preserves edges
     if filter:
+        # TODO test different settings
         gray1 = cv2.bilateralFilter(gray1, 5, 50, 50)
         gray2 = cv2.bilateralFilter(gray2, 5, 50, 50)
 
@@ -112,20 +123,24 @@ def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.
     kp1, kp2 = None, None
     des1, des2 = None, None
     if detector == Detector.SIFT:
+        # TODO change default parameters, see https://docs.opencv.org/4.2.0/d5/d3c/classcv_1_1xfeatures2d_1_1SIFT.html
         sift = cv2.xfeatures2d.SIFT_create()
         kp1, des1 = sift.detectAndCompute(gray1, None)
         kp2, des2 = sift.detectAndCompute(gray2, None)
     elif detector == Detector.SURF:
+        # TODO change default parameters, see https://docs.opencv.org/4.2.0/d5/df7/classcv_1_1xfeatures2d_1_1SURF.html
         surf = cv2.xfeatures2d.SURF_create(400)
         kp1, des1 = surf.detectAndCompute(gray1, None)
         kp2, des2 = surf.detectAndCompute(gray2, None)
     elif detector == Detector.FAST:
+        # TODO change default parameters, see https://docs.opencv.org/4.2.0/df/d74/classcv_1_1FastFeatureDetector.html
         fast = cv2.FastFeatureDetector_create()
         # br = cv2.BRISK_create()
         sift = cv2.xfeatures2d.SIFT_create()  # https://stackoverflow.com/questions/17967950/improve-matching-of-feature-points-with-opencv
         kp1, des1 = sift.compute(gray1, fast.detect(gray1, None))
         kp2, des2 = sift.compute(gray2, fast.detect(gray2, None))
     elif detector == Detector.ORB:
+        # TODO change default parameters, see https://docs.opencv.org/4.2.0/db/d95/classcv_1_1ORB.html
         orb = cv2.ORB_create()
         kp1, des1 = orb.detectAndCompute(gray1, None)
         kp2, des2 = orb.detectAndCompute(gray2, None)
@@ -138,12 +153,13 @@ def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.
     if matcher == Matcher.FLANN:
         pts1, pts2, matches = get_flann_matches(kp1, des1, kp2, des2, detector)
     elif matcher == Matcher.BRUTE_FORCE:
-        pts1, pts2, matches = get_brute_force_matches(kp1, des1, kp2, des2, detector, ratioTest=True)
+        pts1, pts2, matches = get_brute_force_matches(kp1, des1, kp2, des2, detector)
 
     if pts1 is None or pts2 is None:
         raise Exception('Unknown matcher [' + str(matcher) + ']')
 
     # Subpixel refinement
+    # TODO test different settings
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.001)
     pts1 = cv2.cornerSubPix(gray1, np.float32(pts1), (5, 5), (-1, -1), criteria)
     pts2 = cv2.cornerSubPix(gray2, np.float32(pts2), (5, 5), (-1, -1), criteria)

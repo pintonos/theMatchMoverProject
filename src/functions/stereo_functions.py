@@ -18,8 +18,6 @@ def invert(R, t):
 
 
 def get_E_from_F(pts1, pts2, K):
-    """ Currently unused
-    """
     # Get fundamental Matrix
     F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.RANSAC)
     F = F/np.linalg.norm(F)
@@ -29,15 +27,19 @@ def get_E_from_F(pts1, pts2, K):
     return E
 
 
-def stereo_view_map(pts1, pts2, t_vec, K, dist, img_points_3d, obj_orientation):
+def stereo_view_map(pts1, pts2, img_points_3d, t_init, R_init, K, dist, compute_with_f=False):
     # More explanation at https://stackoverflow.com/questions/33906111/how-do-i-estimate-positions-of-two-cameras-in-opencv
 
     # Normalize for Essential Matrix calculation
+    # TODO make undistortPoints work
     # pts_l_norm = cv2.undistortPoints(np.expand_dims(pts1, axis=1).astype(dtype=np.float32), cameraMatrix=K, distCoeffs=dist)
     # pts_r_norm = cv2.undistortPoints(np.expand_dims(pts2, axis=1).astype(dtype=np.float32), cameraMatrix=K, distCoeffs=dist)
 
-    E, _ = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=0.1,
-                                cameraMatrix=K)  # TODO test different settings
+    E = None
+    if compute_with_f:  # compute essential matrix via fundamental matrix
+        E = get_E_from_F(pts1, pts2, K)
+    else:  # find essential matrix directly
+        E, _ = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=0.1, cameraMatrix=K)
 
     # refine mapping
     pts1 = np.reshape(pts1, (1, len(pts1), 2))
@@ -48,8 +50,8 @@ def stereo_view_map(pts1, pts2, t_vec, K, dist, img_points_3d, obj_orientation):
     points, R, t, _ = cv2.recoverPose(E, pts1, pts2, K)
 
     # Project world coordinates to frame 2
-    t = np.add(t, np.expand_dims(t_vec, axis=1))
-    R = R @ obj_orientation
+    t = np.add(t, np.expand_dims(t_init, axis=1))
+    R = R @ R_init
     r_vec, _ = cv2.Rodrigues(R, dst=dist)
     
     img_points_2d, _ = cv2.projectPoints(img_points_3d, r_vec, t, K, dist)

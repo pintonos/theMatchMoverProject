@@ -30,7 +30,7 @@ t_vec = OBJECT_POSITION
 proj_points_2d, _ = cv2.projectPoints(img_points_3d, r_vec_id, t_vec, K, dist)
 
 success, first_frame = video.read()
-# undistort first frame
+# un-distort first frame
 first_frame = cv2.undistort(first_frame, distCoeffs=dist, cameraMatrix=K)
 first_frame_draw = draw(first_frame.copy(), proj_points_2d)
 
@@ -48,21 +48,21 @@ while success and count < MAX_FPS:
     if count < SKIP_FPS:
         continue
 
-    # undistort frame
+    # un-distort frame
     frame = cv2.undistort(frame, distCoeffs=dist, cameraMatrix=K)
 
     # Automatic point matching
     match_points_1, match_points_2 = get_points(first_frame, frame, filter=True, detector=Detector.SURF,
                                                 matcher=Matcher.BRUTE_FORCE)
 
-    _, _, proj_points_img_2 = stereo_view_map(match_points_1, match_points_2, t_vec, K, dist, img_points_3d, R)
+    _, _, proj_points_img_2 = stereo_view_map(match_points_1, match_points_2, img_points_3d, t_vec, R, K, dist)
 
     frame = draw(frame, proj_points_img_2)
-    draw_points(frame, match_points_2)
+    # draw_points(frame, match_points_2)
     out.write(frame)
 
-    cv2.imshow('current_frame', frame)
-    cv2.waitKey(1)
+    #cv2.imshow('current_frame', frame)
+    #cv2.waitKey(1)
 
 video.release()
 out.release()

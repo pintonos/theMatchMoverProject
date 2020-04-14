@@ -141,7 +141,7 @@ def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.
         kp2, des2 = sift.compute(gray2, fast.detect(gray2, None))
     elif detector == Detector.ORB:
         # TODO change default parameters, see https://docs.opencv.org/4.2.0/db/d95/classcv_1_1ORB.html
-        orb = cv2.ORB_create()
+        orb = cv2.ORB_create(nfeatures=2000, scaleFactor=2)
         kp1, des1 = orb.detectAndCompute(gray1, None)
         kp2, des2 = orb.detectAndCompute(gray2, None)
 

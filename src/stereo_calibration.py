@@ -61,8 +61,8 @@ while success and count < MAX_FPS:
     # draw_points(frame, match_points_2)
     out.write(frame)
 
-    #cv2.imshow('current_frame', frame)
-    #cv2.waitKey(1)
+    cv2.imshow('current_frame', frame)
+    cv2.waitKey(1)
 
 video.release()
 out.release()

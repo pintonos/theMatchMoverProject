@@ -4,6 +4,14 @@ from util import *
 """
 
 
+def draw_axis(img, points):
+    points = np.int32(points).reshape(-1, 2)
+    img = cv2.line(img, tuple(points[0]), tuple(points[1]), (255,0,0), 3)
+    img = cv2.line(img, tuple(points[0]), tuple(points[2]), (0,255,0), 3)
+    img = cv2.line(img, tuple(points[0]), tuple(points[3]), (0,0,255), 3)
+    return img
+
+
 def draw(img, points):
     points = np.int32(points).reshape(-1, 2)
 
@@ -30,7 +38,15 @@ def get_3d_cube_points():
     return np.float32([[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0], [0, 0, -1], [0, 1, -1], [1, 1, -1], [1, 0, -1]])
 
 
-def plot_show_img(img, points, title):
-    draw(img, points)
+def get_3d_axis():
+    return np.float32([[4.5684504, 5.56244952, -3.50609609], [5.09206892, 3.32229468, -3.74294852],
+                       [8.81651054, 4.7006616, -2.50846552], [4.59012777, 5.58675727, -3.05795159]])
+
+
+def plot_show_img(img, points, title, axis=False):
+    if axis:
+        draw_axis(img, points)
+    else:
+        draw(img, points)
     img = cv2.resize(img, DEMO_RESIZE)
     cv2.imshow(title, img)

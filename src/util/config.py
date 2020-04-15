@@ -53,6 +53,8 @@ CAMERA_DIST_COEFF = TMP_PATH + 'dist2.npy'
 MANUAL_MATCH_POINTS_1 = TMP_PATH + 'manual_pt1.csv'
 MANUAL_MATCH_POINTS_2 = TMP_PATH + 'manual_pt2.csv'
 MANUAL_MATCH_POINTS_3 = TMP_PATH + 'manual_pt3.csv'
+REF_POINTS_1 = TMP_PATH + 'reference_1.csv'
+REF_POINTS_2 = TMP_PATH + 'reference_2.csv'
 
 K, dist = None, None
 

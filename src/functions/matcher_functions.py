@@ -27,7 +27,7 @@ def get_harris_corner(img):
     return dst
 
 
-def lowes_ratio_test(kp1, kp2, matches, threshold=0.8):
+def lowes_ratio_test(kp1, kp2, matches, threshold=0.7):
     """
     Ratio test as per Lowe's paper.
     :param threshold: threshold to compare matches
@@ -129,7 +129,7 @@ def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.
         kp2, des2 = sift.detectAndCompute(gray2, None)
     elif detector == Detector.SURF:
         # TODO change default parameters, see https://docs.opencv.org/4.2.0/d5/df7/classcv_1_1xfeatures2d_1_1SURF.html
-        surf = cv2.xfeatures2d.SURF_create(400)
+        surf = cv2.xfeatures2d.SURF_create()
         kp1, des1 = surf.detectAndCompute(gray1, None)
         kp2, des2 = surf.detectAndCompute(gray2, None)
     elif detector == Detector.FAST:

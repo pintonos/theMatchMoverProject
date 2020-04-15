@@ -13,11 +13,7 @@ img_2 = cv2.imread('../' + DATA_PATH + 'img_2.jpg')
 
 # get R and t
 pts1, pts2 = get_points(img_1, img_2)
-E, _ = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=0.1, cameraMatrix=K)
-_, R, t, _ = cv2.recoverPose(E, pts1, pts2, K)
-
-t = np.add(t, np.expand_dims(OBJECT_POSITION, axis=1))
-R = R @ OBJECT_ORIENTATION
+R, t = get_R_and_t(pts1, pts2, OBJECT_POSITION, OBJECT_ORIENTATION, K)
 
 # point correspondences of book
 ref_points_1 = np.array([[1334.0, 1335.0, 1590.0, 1613.0, 1610.0, 1332.0],

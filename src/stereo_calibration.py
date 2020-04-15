@@ -23,18 +23,10 @@ frame_height = int(video.get(4))
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
 out = cv2.VideoWriter(VIDEO_OUT_STEREO_PATH, fourcc, 20.0, (frame_width, frame_height))
 
-# Project world coordinates to first frame
 R = OBJECT_ORIENTATION
-r_vec_id, _ = cv2.Rodrigues(R)
 t_vec = OBJECT_POSITION
-proj_points_2d, _ = cv2.projectPoints(img_points_3d, r_vec_id, t_vec, K, dist)
 
 success, first_frame = video.read()
-# un-distort first frame
-first_frame = cv2.undistort(first_frame, distCoeffs=dist, cameraMatrix=K)
-first_frame_draw = draw(first_frame.copy(), proj_points_2d)
-
-out.write(first_frame_draw)
 
 # Project coordinates to every following frame
 count = 0
@@ -48,20 +40,18 @@ while success and count < MAX_FPS:
     if count < SKIP_FPS:
         continue
 
-    # un-distort frame
-    frame = cv2.undistort(frame, distCoeffs=dist, cameraMatrix=K)
-
     # Automatic point matching
-    match_points_1, match_points_2 = get_points(first_frame, frame, filter=True, detector=Detector.SURF,
-                                                matcher=Matcher.BRUTE_FORCE)
+    match_points_1, match_points_2 = get_points(first_frame, frame)
 
-    _, _, proj_points_img_2 = stereo_view_map(match_points_1, match_points_2, img_points_3d, t_vec, R, K, dist)
+    R, t_vec = get_R_and_t(match_points_1, match_points_2, t_vec, R, K)
+    r_vec, _ = cv2.Rodrigues(R, dst=dist)
+    img_points_2d, _ = cv2.projectPoints(img_points_3d, r_vec, t_vec, K, dist)
 
-    frame = draw(frame, proj_points_img_2)
+    plot_show_img(frame, img_points_2d, 'img_1', axis=True)
     # draw_points(frame, match_points_2)
     out.write(frame)
 
-    cv2.imshow('current_frame', frame)
+    #cv2.imshow('current_frame', frame)
     cv2.waitKey(1)
 
 video.release()

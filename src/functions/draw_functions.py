@@ -6,9 +6,9 @@ from util import *
 
 def draw_axis(img, points):
     points = np.int32(points).reshape(-1, 2)
-    img = cv2.line(img, tuple(points[0]), tuple(points[1]), (255,0,0), 3)
-    img = cv2.line(img, tuple(points[0]), tuple(points[2]), (0,255,0), 3)
-    img = cv2.line(img, tuple(points[0]), tuple(points[3]), (0,0,255), 3)
+    img = cv2.line(img, tuple(points[0]), tuple(points[1]), (255, 0, 0), 3)
+    img = cv2.line(img, tuple(points[0]), tuple(points[2]), (0, 255, 0), 3)
+    img = cv2.line(img, tuple(points[0]), tuple(points[3]), (0, 0, 255), 3)
     return img
 
 
@@ -39,8 +39,8 @@ def get_3d_cube_points():
 
 
 def get_3d_axis():
-    return np.float32([[4.5684504, 5.56244952, -3.50609609], [5.09206892, 3.32229468, -3.74294852],
-                       [8.81651054, 4.7006616, -2.50846552], [4.59012777, 5.58675727, -3.05795159]])
+    return np.float32([[0.70423656, 0.3138115, 3.00457495], [0.76984241, 0.14629454, 3.27673669],
+                       [1.19341674, 0.3301357, 2.89939043], [0.70700564, 0.36619292, 3.03376407]])
 
 
 def plot_show_img(img, points, title, axis=False):

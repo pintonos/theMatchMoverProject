@@ -13,15 +13,8 @@ SCALING_FACTOR = 9
 CALIBR_SQUARE_SIZE_MM = 25
 CALIBR_BOARD_SHAPE = (8, 6)
 
-OBJECT_POSITION = np.asarray(np.float32([0.9, 1.9, 29]))
-
-# Orientation matrix -60 degrees about x-axis
-# More explanation https://www.andre-gaschler.com/rotationconverter/
-OBJECT_ORIENTATION = np.float32([
-    [1, 0, 0],
-    [0, 0.5, 0.8660254],
-    [0, -0.8660254, 0.5]
-])
+OBJECT_POSITION = np.zeros(3)
+OBJECT_ORIENTATION = np.identity(3)
 
 
 def get_obj_point_structure():

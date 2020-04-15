@@ -6,11 +6,9 @@ from util import *
 
 def draw_axis(img, points):
     points = np.int32(points).reshape(-1, 2)
-    img = cv2.line(img, tuple(points[0]), tuple(points[1]), (255, 0, 0), 3)
-    img = cv2.line(img, tuple(points[0]), tuple(points[2]), (0, 255, 0), 3)
-    img = cv2.line(img, tuple(points[0]), tuple(points[3]), (0, 0, 255), 3)
-    return img
-
+    cv2.line(img, tuple(points[0]), tuple(points[1]), (255, 0, 0), 3)
+    cv2.line(img, tuple(points[0]), tuple(points[2]), (0, 255, 0), 3)
+    cv2.line(img, tuple(points[0]), tuple(points[3]), (0, 0, 255), 3)
 
 def draw(img, points):
     points = np.int32(points).reshape(-1, 2)

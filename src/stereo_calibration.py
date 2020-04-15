@@ -9,7 +9,7 @@ MAX_FPS = 100
 SKIP_FPS = 30
 
 # Points for a 3D cube
-img_points_3d = get_3d_cube_points()
+img_points_3d = get_3d_axis()
 
 video = cv2.VideoCapture(VIDEO_PATH)
 frames_total = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -47,8 +47,9 @@ while success and count < MAX_FPS:
     r_vec, _ = cv2.Rodrigues(R, dst=dist)
     img_points_2d, _ = cv2.projectPoints(img_points_3d, r_vec, t_vec, K, dist)
 
+    draw_points(frame, match_points_2)
     plot_show_img(frame, img_points_2d, 'img_1', axis=True)
-    # draw_points(frame, match_points_2)
+
     out.write(frame)
 
     #cv2.imshow('current_frame', frame)

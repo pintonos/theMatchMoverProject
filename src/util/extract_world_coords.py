@@ -15,7 +15,7 @@ img_2 = cv2.imread('../' + DATA_PATH + 'img_2.jpg')
 pts1, pts2 = get_points(img_1, img_2)
 R, t = get_R_and_t(pts1, pts2, OBJECT_POSITION, OBJECT_ORIENTATION, K)
 
-# point correspondences of book
+# point correspondences of book, frame 0 and 100
 ref_points_1 = np.array([[1334.0, 1335.0, 1590.0, 1613.0, 1610.0, 1332.0],
                          [654.0, 561.0, 574.0, 669.0, 697.0, 680.0]])
 ref_points_2 = np.array([[1187.0, 1243.0, 1518.0, 1484.0, 1482.0, 1188.0],

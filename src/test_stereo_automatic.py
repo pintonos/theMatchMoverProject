@@ -16,11 +16,11 @@ img_2 = cv2.imread('./' + DATA_PATH + 'img_2.jpg')
 match_points_1, match_points_2 = get_points(img_1, img_2)
 
 # project points to image 1
-r_vec, _ = cv2.Rodrigues(OBJECT_ORIENTATION, dst=dist)
-img_points1_2d, _ = cv2.projectPoints(img_points_3d, r_vec, OBJECT_POSITION, K, dist)
+r_vec, _ = cv2.Rodrigues(INIT_ORIENTATION, dst=dist)
+img_points1_2d, _ = cv2.projectPoints(img_points_3d, r_vec, INIT_POSITION, K, dist)
 
 # project points to image 2
-R, t = get_R_and_t(match_points_1, match_points_2, OBJECT_POSITION, OBJECT_ORIENTATION, K)
+R, t = get_R_and_t(match_points_1, match_points_2, INIT_ORIENTATION, INIT_POSITION, K)
 r_vec, _ = cv2.Rodrigues(R, dst=dist)
 img_points2_2d, _ = cv2.projectPoints(img_points_3d, r_vec, t, K, dist)
 

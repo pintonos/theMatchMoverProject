@@ -27,7 +27,7 @@ def get_E_from_F(pts1, pts2, K):
     return E
 
 
-def get_R_and_t(pts1, pts2, t_init, R_init, K, compute_with_f=False):
+def get_R_and_t(pts1, pts2, R_init, t_init, K, compute_with_f=False):
     # More explanation at https://stackoverflow.com/questions/33906111/how-do-i-estimate-positions-of-two-cameras-in-opencv
 
     # Normalize for Essential Matrix calculation

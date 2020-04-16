@@ -13,8 +13,8 @@ SCALING_FACTOR = 9
 CALIBR_SQUARE_SIZE_MM = 25
 CALIBR_BOARD_SHAPE = (8, 6)
 
-OBJECT_POSITION = np.zeros(3)
-OBJECT_ORIENTATION = np.identity(3)
+INIT_POSITION = np.asarray([0, 0, 0], dtype=float)
+INIT_ORIENTATION = np.identity(3)
 
 
 def get_obj_point_structure():
@@ -47,7 +47,9 @@ MANUAL_MATCH_POINTS_1 = TMP_PATH + 'manual_pt1.csv'
 MANUAL_MATCH_POINTS_2 = TMP_PATH + 'manual_pt2.csv'
 MANUAL_MATCH_POINTS_3 = TMP_PATH + 'manual_pt3.csv'
 REF_POINTS_1 = TMP_PATH + 'reference_1.csv'
-REF_POINTS_2 = TMP_PATH + 'reference_2.csv'
+REF_POINTS_50 = TMP_PATH + 'reference_50.csv'
+REF_POINTS_100 = TMP_PATH + 'reference_100.csv'
+REF_POINTS_150 = TMP_PATH + 'reference_150.csv'
 
 K, dist = None, None
 

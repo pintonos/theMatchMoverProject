@@ -23,8 +23,8 @@ frame_height = int(video.get(4))
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
 out = cv2.VideoWriter(VIDEO_OUT_STEREO_PATH, fourcc, 20.0, (frame_width, frame_height))
 
-R = OBJECT_ORIENTATION
-t_vec = OBJECT_POSITION
+R = INIT_ORIENTATION
+t_vec = INIT_POSITION
 
 success, first_frame = video.read()
 
@@ -43,7 +43,7 @@ while success and count < MAX_FPS:
     # Automatic point matching
     match_points_1, match_points_2 = get_points(first_frame, frame)
 
-    R, t_vec = get_R_and_t(match_points_1, match_points_2, t_vec, R, K)
+    R, t_vec = get_R_and_t(match_points_1, match_points_2, R, t_vec, K)
     r_vec, _ = cv2.Rodrigues(R, dst=dist)
     img_points_2d, _ = cv2.projectPoints(img_points_3d, r_vec, t_vec, K, dist)
 

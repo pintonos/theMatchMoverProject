@@ -43,37 +43,37 @@ img_1 = cv2.imread('../' + DATA_PATH + 'img_1.jpg')
 img_2 = cv2.imread('../' + DATA_PATH + 'img_2.jpg')
 img_3 = cv2.imread('../' + DATA_PATH + 'img_3.jpg')
 
-ref_points_1 = pd.read_csv('../' + REF_POINTS_1, sep=',', header=None, dtype=float).values
-ref_points_2 = pd.read_csv('../' + REF_POINTS_50, sep=',', header=None, dtype=float).values
-ref_points_3 = pd.read_csv('../' + REF_POINTS_150, sep=',', header=None, dtype=float).values
+pts1 = pd.read_csv('../' + REF_POINTS_1, sep=',', header=None, dtype=float).values
+pts2 = pd.read_csv('../' + REF_POINTS_50, sep=',', header=None, dtype=float).values
+pts3 = pd.read_csv('../' + REF_POINTS_150, sep=',', header=None, dtype=float).values
+
+# first 6 points are axis
+ref_points_1 = pts1[:6]
+ref_points_2 = pts2[:6]
 
 # get R and t
-pts1, pts2 = get_points(img_1, img_2)
 R2, t2 = get_R_and_t(pts1, pts2, INIT_ORIENTATION, INIT_POSITION, K)
+R3, t3 = get_R_and_t(pts1, pts3, INIT_ORIENTATION, INIT_POSITION, K)
 
-pts1, pts2 = get_points(img_1, img_3)
-R3, t3 = get_R_and_t(pts1, pts2, INIT_ORIENTATION, INIT_POSITION, K)
+world_coords_axis, _ = get_3d_world_points(INIT_ORIENTATION, INIT_POSITION, R2, t2, ref_points_1, ref_points_2)
+print(world_coords_axis)
 
-world_coords_axis1, _ = get_3d_world_points(INIT_ORIENTATION, INIT_POSITION, R2, t2, ref_points_1, ref_points_2)
-world_coords_axis2, _ = get_3d_world_points(INIT_ORIENTATION, INIT_POSITION, R3, t3, ref_points_1, ref_points_3)
-print(world_coords_axis1 / 7.875689)
-print(world_coords_axis2 / 2.1829484)
 # project points to image 1
 r_vec, _ = cv2.Rodrigues(INIT_ORIENTATION, dst=dist)
-img_points1_2d, _ = cv2.projectPoints(world_coords_axis1, r_vec, INIT_POSITION, K, dist)
+img_points1_2d, _ = cv2.projectPoints(world_coords_axis, r_vec, INIT_POSITION, K, dist)
 
 # project points to image 2
 r_vec2, _ = cv2.Rodrigues(R2, dst=dist)
-img_points2_2d, _ = cv2.projectPoints(world_coords_axis1, r_vec2, t2, K, dist)
+img_points2_2d, _ = cv2.projectPoints(world_coords_axis, r_vec2, t2, K, dist)
 
 # project points to image 3
 r_vec3, _ = cv2.Rodrigues(R3, dst=dist)
-img_points3_2d, _ = cv2.projectPoints(world_coords_axis2, r_vec3, t3, K, dist)
+img_points3_2d, _ = cv2.projectPoints(world_coords_axis, r_vec3, t3, K, dist)
 
 # draw reference points
-draw_points(img_1, ref_points_1.astype(int))
-draw_points(img_2, ref_points_2.astype(int))
-draw_points(img_3, ref_points_3.astype(int))
+draw_points(img_1, pts1.astype(int))
+draw_points(img_2, pts2.astype(int))
+draw_points(img_3, pts3.astype(int))
 
 # show images
 plot_show_img(img_1, img_points1_2d, 'img_1', axis=True)

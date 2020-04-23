@@ -27,7 +27,7 @@ def get_E_from_F(pts1, pts2, K):
     return E
 
 
-def get_R_and_t(pts1, pts2, R_init, t_init, K, compute_with_f=False):
+def get_R_and_t(pts1, pts2, K, compute_with_f=False):
     # More explanation at https://stackoverflow.com/questions/33906111/how-do-i-estimate-positions-of-two-cameras-in-opencv
 
     # Normalize for Essential Matrix calculation
@@ -41,6 +41,10 @@ def get_R_and_t(pts1, pts2, R_init, t_init, K, compute_with_f=False):
     else:  # find essential matrix directly
         E, _ = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=0.1, cameraMatrix=K)
 
+    # sanity check for E
+    if not np.isclose(np.linalg.det(E), 0.0, atol=1.e-5):
+        raise Exception('det(E) != 0, instead it is:', np.linalg.det(E))
+
     # refine mapping
     pts1 = np.reshape(pts1, (1, len(pts1), 2))
     pts2 = np.reshape(pts2, (1, len(pts2), 2))
@@ -49,8 +53,8 @@ def get_R_and_t(pts1, pts2, R_init, t_init, K, compute_with_f=False):
     # Recover relative camera rotation and translation from E and the corresponding points
     points, R, t, _ = cv2.recoverPose(E, pts1, pts2, K)
 
-    # Project world coordinates to frame 2
-    t = np.add(t, np.expand_dims(t_init, axis=1))
-    R = R @ R_init
+    # sanity check for R
+    if not np.isclose(np.linalg.det(R), 1.0, atol=1.e-5):
+        raise Exception('det(R) != 1, instead it is:', np.linalg.det(R))
 
-    return R, t.reshape(1, 3)[0]
+    return R, t

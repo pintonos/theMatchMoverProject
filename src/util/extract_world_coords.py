@@ -21,6 +21,14 @@ def get_3d_world_points(R1, t1, R2, t2, ref_pts1, ref_pts2):
     P2 = np.c_[R2, t2]
     world_coords = cv2.triangulatePoints(P1, P2, pts_l_norm, pts_r_norm)
 
+    # sanity check
+    x2 = P2 @ world_coords
+    x2 = x2 / x2[2]
+    x2 = x2[:2]
+    # should be equal
+    print(pts_r_norm[:4])
+    print(x2.transpose()[:4])
+
     # from homogeneous to normal coordinates
     world_coords /= world_coords[3]
     world_coords = world_coords[:-1]
@@ -38,13 +46,11 @@ pts3 = pd.read_csv('../' + REF_POINTS_150, sep=',', header=None, dtype=float).va
 
 # get R and t
 R1, t1 = INIT_ORIENTATION, INIT_POSITION
-R2, t2 = get_R_and_t(pts1, pts2, R1, t1, K)
-R3, t3 = get_R_and_t(pts1, pts3, R1, t1, K)
+R2, t2 = get_R_and_t(pts1, pts2, K)
+R3, t3 = get_R_and_t(pts1, pts3, K)
 
 # get world points of axis
 world_coords_axis, _ = get_3d_world_points(R1, t1, R2, t2, pts1, pts2)
-
-print(world_coords_axis)
 
 # project points to image 1
 r_vec1, _ = cv2.Rodrigues(R1)

@@ -10,6 +10,7 @@ def draw_axis(img, points):
     cv2.line(img, tuple(points[0]), tuple(points[2]), (0, 255, 0), 3)
     cv2.line(img, tuple(points[0]), tuple(points[3]), (0, 0, 255), 3)
 
+
 def draw(img, points):
     points = np.int32(points).reshape(-1, 2)
 
@@ -26,10 +27,10 @@ def draw(img, points):
     return img
 
 
-def draw_points(img, pts):
+def draw_points(img, pts, i_init=0):
     for i, pt in enumerate(pts):
         cv2.circle(img, (pt[0], pt[1]), 3, (0, 0, 255), -1)
-        cv2.putText(img, str(i), (pt[0], pt[1]), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 1)
+        cv2.putText(img, str(i + i_init), (pt[0], pt[1]), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 1)
 
 
 def get_3d_cube_points():

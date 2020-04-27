@@ -58,3 +58,34 @@ def get_R_and_t(pts1, pts2, K, compute_with_f=False):
         raise Exception('det(R) != 1, instead it is:', np.linalg.det(R))
 
     return R, t
+
+
+def get_3d_world_points(R1, t1, R2, t2, ref_pts1, ref_pts2, dist, K):
+    # undistort ref points
+    # second answer: https://stackoverflow.com/questions/16295551/how-to-correctly-use-cvtriangulatepoints/16299909
+    pts_l_norm = cv2.undistortPoints(np.expand_dims(ref_pts1, axis=1).astype(dtype=np.float32), cameraMatrix=K,
+                                     distCoeffs=dist)
+    pts_r_norm = cv2.undistortPoints(np.expand_dims(ref_pts2, axis=1).astype(dtype=np.float32), cameraMatrix=K,
+                                     distCoeffs=dist)
+
+    # triangulate points to get real world coordinates
+    P1 = np.c_[R1, t1]
+    P2 = np.c_[R2, t2]
+    world_coords = cv2.triangulatePoints(P1, P2, pts_l_norm, pts_r_norm)
+
+    # sanity check
+    x2 = P2 @ world_coords
+    x2 = x2 / x2[2]
+    x2 = x2[:2]
+    # should be equal
+    print(pts_r_norm[:4])
+    print(x2.transpose()[:4])
+
+    # from homogeneous to normal coordinates
+    world_coords /= world_coords[3]
+    world_coords = world_coords[:-1]
+
+    world_coords = world_coords.transpose()
+    axis = world_coords[0:4]  # first 4 points are axis
+
+    return axis, world_coords

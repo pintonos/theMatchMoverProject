@@ -28,28 +28,22 @@ CRITERIA = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, CALIBR_SQUARE_SI
 
 # Data & Tmp path
 DATA_PATH = '../resources/data/'
-TMP_PATH = '../resources/tmp/'
 
 # Path to calibration video
-CALIB_VIDEO_PATH = DATA_PATH + 'visual-geometry-calibration2.MTS'
+CALIB_VIDEO_PATH = DATA_PATH + 'visual-geometry-calibration.MTS'
 
 # Path to input video
-VIDEO_PATH = DATA_PATH + 'visual-geometry-video2_1.MTS'
+VIDEO_PATH = DATA_PATH + 'visual-geometry-video.MTS'
 
 # Path to output video
-VIDEO_OUT_PATH = TMP_PATH + 'output.avi'
-VIDEO_OUT_STEREO_PATH = TMP_PATH + 'output_stereo.avi'
+VIDEO_OUT_PATH = DATA_PATH + 'output.avi'
+VIDEO_OUT_STEREO_PATH = DATA_PATH + 'output_stereo.avi'
 
 # Intermediate files
-CAMERA_MATRIX = TMP_PATH + 'cmatrix2.npy'
-CAMERA_DIST_COEFF = TMP_PATH + 'dist2.npy'
-MANUAL_MATCH_POINTS_1 = TMP_PATH + 'manual_pt1.csv'
-MANUAL_MATCH_POINTS_2 = TMP_PATH + 'manual_pt2.csv'
-MANUAL_MATCH_POINTS_3 = TMP_PATH + 'manual_pt3.csv'
-REF_POINTS_1 = TMP_PATH + 'reference_1.csv'
-REF_POINTS_50 = TMP_PATH + 'reference_50.csv'
-REF_POINTS_100 = TMP_PATH + 'reference_100.csv'
-REF_POINTS_150 = TMP_PATH + 'reference_150.csv'
+CAMERA_MATRIX = DATA_PATH + 'cmatrix.npy'
+CAMERA_DIST_COEFF = DATA_PATH + 'dist.npy'
+REF_POINTS_0 = DATA_PATH + 'reference_0.csv'
+REF_POINTS_100 = DATA_PATH + 'reference_100.csv'
 
 K, dist = None, None
 

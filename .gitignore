@@ -1,5 +1,6 @@
-/resources/data/
 /.idea/
 /src/__pycache__
 *.avi
 *.pyc
+*.MTS
+*.jpg

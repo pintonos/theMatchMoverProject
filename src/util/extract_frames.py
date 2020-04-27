@@ -1,6 +1,6 @@
 from util import *
 
-""" Extract three different frames from input video
+""" Extract two different frames from input video
 
 Frames are saved in DATA_PATH
 """
@@ -10,7 +10,6 @@ frames_total = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 
 frame_1 = 0
 frame_2 = 100
-frame_3 = 200
 
 count = 0
 success = True
@@ -22,21 +21,17 @@ while success:
         img_1 = img
     if frame_2 == count:
         img_2 = img
-    if frame_3 == count:
-        img_3 = img
         break
     count += 1
 
-if img_1 is None or img_2 is None or img_3 is None:
+if img_1 is None or img_2 is None:
     raise Exception('Unable to find all frames')
 
-cv2.imwrite('../' + DATA_PATH + 'img_1.jpg', img_1)
-cv2.imwrite('../' + DATA_PATH + 'img_2.jpg', img_2)
-cv2.imwrite('../' + DATA_PATH + 'img_3.jpg', img_3)
+cv2.imwrite('../' + DATA_PATH + 'img_0.jpg', img_1)
+cv2.imwrite('../' + DATA_PATH + 'img_100.jpg', img_2)
 
-cv2.imshow('img_1', cv2.resize(img_1, DEMO_RESIZE))
-cv2.imshow('img_2', cv2.resize(img_2, DEMO_RESIZE))
-cv2.imshow('img_3', cv2.resize(img_3, DEMO_RESIZE))
+cv2.imshow('img_0', cv2.resize(img_1, DEMO_RESIZE))
+cv2.imshow('img_100', cv2.resize(img_2, DEMO_RESIZE))
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()

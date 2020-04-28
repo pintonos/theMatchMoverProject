@@ -8,8 +8,8 @@ if K is None or dist is None:
     raise Exception('Camera matrix or distortion coefficient not found')
 
 # get point correspondences
-pts1 = pd.read_csv('../' + REF_POINTS_0, sep=',', header=None, dtype=float).values
-pts2 = pd.read_csv('../' + REF_POINTS_100, sep=',', header=None, dtype=float).values
+pts1 = pd.read_csv(REF_POINTS_0, sep=',', header=None, dtype=float).values
+pts2 = pd.read_csv(REF_POINTS_100, sep=',', header=None, dtype=float).values
 
 # get R and t
 R1, t1 = INIT_ORIENTATION, INIT_POSITION
@@ -29,8 +29,8 @@ img_points2_2d, _ = cv2.projectPoints(world_coords_axis, r_vec2, t2, K, dist)
 
 
 # Read images
-img_1 = cv2.imread('../' + DATA_PATH + 'img_0.jpg')
-img_2 = cv2.imread('../' + DATA_PATH + 'img_100.jpg')
+img_1 = cv2.imread(DATA_PATH + 'img_0.jpg')
+img_2 = cv2.imread(DATA_PATH + 'img_100.jpg')
 
 # draw reference points
 draw_points(img_1, pts1.astype(int))

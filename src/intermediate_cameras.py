@@ -39,6 +39,11 @@ while success and count < 100:
 
     first_frame = frame
 
+
+    img = cv2.resize(frame, DEMO_RESIZE)
+    cv2.imshow('frame', img)
+    cv2.waitKey(1)
+
 video.release()
 out.release()
 cv2.destroyAllWindows()

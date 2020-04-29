@@ -23,7 +23,7 @@ def find_key_frames(video, idx1, idx2):
     traced_matches = None
     last_frame = None
 
-    while success:
+    while success and curr_idx < idx2 - 1:
         success, frame = video.read()
         curr_idx += 1
 
@@ -60,10 +60,7 @@ def find_key_frames(video, idx1, idx2):
                     keyframes.append(traced_matches)
                     traced_matches = None
 
-        if curr_idx > idx2:
-            # end tracing
-            break
-
+    keyframes.append(traced_matches)
     return keyframes
 
 

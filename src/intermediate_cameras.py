@@ -1,10 +1,10 @@
 from functions import *
 import cv2
 
-MIN_MATCHES = 200
+MIN_MATCHES = 50
 
 
-def find_trace_points(video, idx1, idx2):
+def find_key_frames(video, idx1, idx2):
     '''
     finds point matches that are preserved between idx1 and idx2
     :param video: video file with more than |idx2| frames
@@ -19,6 +19,7 @@ def find_trace_points(video, idx1, idx2):
 
     curr_idx = -1
     success = True
+    keyframes = []
     traced_matches = None
     last_frame = None
 
@@ -53,28 +54,23 @@ def find_trace_points(video, idx1, idx2):
 
                 traced_matches = list(filter(lambda m: m['to'] is not None, traced_matches))
 
+                if len(traced_matches) <= MIN_MATCHES:
+                    # new keyframe
+                    print('found keyframe at pos ' + str(curr_idx + 1))
+                    keyframes.append(traced_matches)
+                    traced_matches = None
+
         if curr_idx > idx2:
             # end tracing
             break
 
-    return traced_matches
+    return keyframes
 
 
 video = cv2.VideoCapture(VIDEO_PATH)
 frames_total = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 
-start = end = 0
-while end < frames_total:
-    end = start + 1
-    number_matches = MIN_MATCHES + 1
-    while number_matches > MIN_MATCHES:
-        print('checking frame', start, 'to', end)
-        matches = find_trace_points(video, start, end)
-        number_matches = len(matches)
-        end += 1
-
-    print("detected keyframe at frame:", str(end))
-
-    start = end
+keyframes = find_key_frames(video, 0, frames_total)
+print(len(keyframes))
 
 video.release()

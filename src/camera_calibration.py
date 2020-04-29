@@ -5,7 +5,7 @@ from util import *
 Will calculate camera matrix and distortion coefficient
 """
 
-SAVE = True  # Save results to disk
+SAVE = False  # Save results to disk
 N_TH_FRAME_TO_USE = 3  # use only every n-th frame for calibration
 
 point_structure = get_obj_point_structure()
@@ -47,7 +47,7 @@ while success:
 
         # DEBUG: Draw and display corners
         # cv2.imshow('Corners', cv2.drawChessboardCorners(img, CALIBR_BOARD_SHAPE, corners_refined, ret))
-        cv2.waitKey(50)
+        #cv2.waitKey(50)
 
 video.release()
 cv2.destroyAllWindows()
@@ -56,6 +56,9 @@ print('Video processing completed, calculating calibration matrix...')
 
 # Calibrate camera
 gray = cv2.cvtColor(demo_img, cv2.COLOR_BGR2GRAY)
+print(obj_points_3d)
+print(img_points_2d)
+
 ret, mtx, dist_tmp, rvecs, tvecs = cv2.calibrateCamera(obj_points_3d, img_points_2d, gray.shape[::-1], None, None)
 
 h, w = demo_img.shape[:2]

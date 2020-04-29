@@ -37,6 +37,13 @@ while success and count < 100:
     intermediate_frame = frame
     break
 
+
+def find_trace_points(video, id1, id2):
+
+    return traced_matches
+
+
+
 video.release()
 out.release()
 cv2.destroyAllWindows()

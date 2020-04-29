@@ -173,4 +173,4 @@ def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.
     
     print(pts2.shape)
     
-    return pts1, pts2
+    return pts1, pts2, matches

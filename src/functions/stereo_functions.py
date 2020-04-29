@@ -78,8 +78,8 @@ def get_3d_world_points(R1, t1, R2, t2, ref_pts1, ref_pts2, dist, K):
     x2 = x2 / x2[2]
     x2 = x2[:2]
     # should be equal
-    print(pts_r_norm[:4])
-    print(x2.transpose()[:4])
+    #print(pts_r_norm[:4])
+    #print(x2.transpose()[:4])
 
     # from homogeneous to normal coordinates
     world_coords /= world_coords[3]

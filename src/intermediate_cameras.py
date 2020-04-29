@@ -85,7 +85,7 @@ def find_trace_points(video, idx1, idx2):
                     else:
                         match['to'] = None
 
-                traced_matches = list(filter(lambda m: m['to'] is None, traced_matches))
+                traced_matches = list(filter(lambda m: m['to'] is not None, traced_matches))
 
         if curr_idx > idx2:
             # end tracing

@@ -171,6 +171,4 @@ def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.
         img3 = cv2.drawMatches(img1, kp1, img2, kp2, matches[:100], None, flags=2)
         plt.imshow(img3), plt.show()
     
-    print(pts2.shape)
-    
     return pts1, pts2, matches

@@ -42,7 +42,7 @@ def get_R_and_t(pts1, pts2, K, compute_with_f=False):
         E, _ = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=0.1, cameraMatrix=K)
 
     # sanity check for E
-    if not np.isclose(np.linalg.det(E), 0.0, atol=1.e-5):
+    if not np.isclose(np.linalg.det(E), 0.0, atol=1.e-3):
         raise Exception('det(E) != 0, instead it is:', np.linalg.det(E))
 
     # refine mapping

@@ -71,14 +71,14 @@ frames_total = int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 pts = pd.read_csv(REF_POINTS_0, sep=',', header=None, dtype=float).values
 dst = pts[:4]  # axis points from first frame
 
-keyframes = find_key_frames(reader, 0, 100)
+keyframes = find_key_frames(reader, 0, 20)
 # comment on keyframes: each point starts in keyframe, no intermediate tracing
 
 reader.release()
 reader, _ = get_video_streams()
 
-pts1 = []
-pts2 = []
+R1, t1 = INIT_ORIENTATION, INIT_POSITION
+
 for keyframe in keyframes:
     # homography between consecutive frames
     number_intermediate_frames = len(keyframe[0]['coordinates'])
@@ -90,21 +90,31 @@ for keyframe in keyframes:
         for frame in keyframe:
             pts.append(frame['coordinates'][i])
         pts_list.append(pts)
-    pts_list = np.asarray(pts_list)
+    pts_array = np.asarray(pts_list)
 
+    world_coordinates = []
     current_frame_idx = keyframe[0]['start_frame']
     for i in range(len(pts_list)-1):
         # get homography between each pair of frames between keyframes
-        M, _ = cv2.findHomography(pts_list[i], pts_list[i+1], cv2.RANSAC, 5.0)
+        M, _ = cv2.findHomography(pts_array[i], pts_array[i+1], cv2.RANSAC, 5.0)
         dst = cv2.perspectiveTransform(dst.reshape(-1, 1, 2), M)
 
         # read frame at index
-        current_frame_idx += 1
         _, current_frame = reader.read()
 
         draw_axis(current_frame, dst)
         writer.write(current_frame)
 
+        R2, t2 = get_R_and_t(pts_array[i], pts_array[i+1], K)
+        _, world_coords = get_3d_world_points(R1, t1, R2, t2, pts_array[i], pts_array[i+1], dist, K)
+        world_coordinates.append(world_coords)
+
+    ret, mtx, dist_tmp, rvecs, tvecs = cv2.calibrateCamera(world_coordinates, pts_array[:-1], (1080, 1920),
+                                                           cameraMatrix=K, distCoeffs=dist,
+                                                           flags=cv2.CALIB_USE_INTRINSIC_GUESS + cv2.CALIB_FIX_K3)  # TODO shape
+    print(mtx)
+    print(dist_tmp)
+    # TODO R1, t1 =
 
     # break after first keyframe
     # TODO resectioning

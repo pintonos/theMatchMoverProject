@@ -89,7 +89,7 @@ def get_brute_force_matches(kp1, des1, kp2, des2, detector, ratioTest=True):
     if ratioTest:
         matches = bf.knnMatch(des1, des2, k=2)
         pts1, pts2, good_matches = lowes_ratio_test(kp1, kp2, matches)
-    else:
+    if not ratioTest:
         # Match descriptors
         matches = bf.match(des1, des2)
 
@@ -108,7 +108,7 @@ def get_brute_force_matches(kp1, des1, kp2, des2, detector, ratioTest=True):
     return np.int32(pts1), np.int32(pts2), good_matches
 
 
-def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.FLANN, showMatches=False):
+def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.BRUTE_FORCE, showMatches=False):
 
     gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
     gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)

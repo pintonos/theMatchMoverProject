@@ -37,10 +37,10 @@ def find_key_frames(video, idx1, idx2):
 
             if traced_matches is None:
                 traced_matches = [{
-                    'startPoint': match_points_1[i],
+                    'start_frame': curr_idx -1,
+                    'coordinates': [match_points_1[i], match_points_2[i]],
                     'from': x.queryIdx,
-                    'to': x.trainIdx,
-                    'endPoint': match_points_2[i]} for i, x in enumerate(matches)]
+                    'to': x.trainIdx} for i, x in enumerate(matches)]
             else:
                 new_matches = dict([(x.queryIdx, x.trainIdx) for x in matches])
                 for match in traced_matches:
@@ -48,7 +48,7 @@ def find_key_frames(video, idx1, idx2):
                     if new_from in new_matches:
                         match['from'] = new_from
                         match['to'] = new_matches[new_from]
-                        match['endPoint'] = match_points_2[list(new_matches.keys()).index(new_from)]
+                        match['coordinates'].append(match_points_2[list(new_matches.keys()).index(new_from)])
                     else:
                         match['to'] = None
 
@@ -67,7 +67,7 @@ def find_key_frames(video, idx1, idx2):
 video = cv2.VideoCapture(VIDEO_PATH)
 frames_total = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 
-keyframes = find_key_frames(video, 0, frames_total)
+keyframes = find_key_frames(video, 0, 3)
 print(len(keyframes))
 
 video.release()

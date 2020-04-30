@@ -46,6 +46,8 @@ def lowes_ratio_test(kp1, kp2, matches, threshold=0.7):
         if m.distance < threshold * n.distance:  # TODO tweak ratio
             pts2.append(kp2[m.trainIdx].pt)
             pts1.append(kp1[m.queryIdx].pt)
+            m.trainIdx = len(pts2) - 1
+            m.queryIdx = len(pts1) - 1
             good.append(m)
 
     return pts1, pts2, good

@@ -39,9 +39,9 @@ def find_key_frames(video, idx1, idx2):
             if traced_matches is None:
                 traced_matches = [{
                     'start_frame': curr_idx - 1,
-                    'coordinates': [match_points_1[i], match_points_2[i]],
+                    'coordinates': [match_points_1[x.queryIdx], match_points_2[x.trainIdx]],
                     'from': x.queryIdx,
-                    'to': x.trainIdx} for i, x in enumerate(matches)]
+                    'to': x.trainIdx} for x in matches]
             else:
                 new_matches = dict([(x.queryIdx, x.trainIdx) for x in matches])
                 for match in traced_matches:

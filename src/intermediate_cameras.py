@@ -74,6 +74,9 @@ dst = pts[:4]  # axis points from first frame
 keyframes = find_key_frames(reader, 0, 100)
 # comment on keyframes: each point starts in keyframe, no intermediate tracing
 
+reader.release()
+reader, _ = get_video_streams()
+
 pts1 = []
 pts2 = []
 for keyframe in keyframes:
@@ -96,12 +99,12 @@ for keyframe in keyframes:
         dst = cv2.perspectiveTransform(dst.reshape(-1, 1, 2), M)
 
         # read frame at index
-        reader.set(cv2.CAP_PROP_POS_FRAMES, current_frame_idx)
         current_frame_idx += 1
         _, current_frame = reader.read()
 
         draw_axis(current_frame, dst)
         writer.write(current_frame)
+
 
     # break after first keyframe
     # TODO resectioning

@@ -2,7 +2,7 @@ from functions import *
 import cv2
 import pandas as pd
 
-MIN_MATCHES = 50
+MIN_MATCHES = 200
 
 
 def find_key_frames(video, idx1, idx2):
@@ -28,38 +28,38 @@ def find_key_frames(video, idx1, idx2):
         success, frame = video.read()
         curr_idx += 1
 
-        if curr_idx == idx1:
-            # start tracing
+        if curr_idx <= idx1:
             last_frame = frame
+            continue
 
-        if curr_idx > idx1:
-            # trace
-            match_points_1, match_points_2, matches = get_points(last_frame, frame)
+        # trace
+        match_points_1, match_points_2, matches = get_points(last_frame, frame)
 
-            if traced_matches is None:
-                traced_matches = [{
-                    'start_frame': curr_idx - 1,
-                    'coordinates': [match_points_1[x.queryIdx], match_points_2[x.trainIdx]],
-                    'from': x.queryIdx,
-                    'to': x.trainIdx} for x in matches]
-            else:
-                new_matches = dict([(x.queryIdx, x.trainIdx) for x in matches])
-                for match in traced_matches:
-                    new_from = match['to']
-                    if new_from in new_matches:
-                        match['from'] = new_from
-                        match['to'] = new_matches[new_from]
-                        match['coordinates'].append(match_points_2[list(new_matches.keys()).index(new_from)])
-                    else:
-                        match['to'] = None
+        if traced_matches is None:
+            traced_matches = [{
+                'start_frame': curr_idx - 1,
+                'coordinates': [match_points_1[i], match_points_2[i]],
+                'from': x.queryIdx,
+                'to': x.trainIdx} for i, x in enumerate(matches)]
+        else:
+            new_matches = dict([(x.queryIdx, x.trainIdx) for x in matches])
+            for match in traced_matches:
+                new_from = match['to']
+                if new_from in new_matches:
+                    match['from'] = new_from
+                    match['to'] = new_matches[new_from]
+                    match['coordinates'].append(match_points_2[list(new_matches.keys()).index(new_from)])
+                else:
+                    match['to'] = None
 
-                traced_matches = list(filter(lambda m: m['to'] is not None, traced_matches))
+            traced_matches = list(filter(lambda m: m['to'] is not None, traced_matches))
 
-                if len(traced_matches) <= MIN_MATCHES:
-                    # new keyframe
-                    print('found keyframe at pos ' + str(curr_idx + 1))
-                    keyframes.append(traced_matches)
-                    traced_matches = None
+            if len(traced_matches) <= MIN_MATCHES:
+                # new keyframe
+                print('found keyframe at pos ' + str(curr_idx + 1))
+                keyframes.append(traced_matches)
+                traced_matches = None
+        last_frame = frame
 
     keyframes.append(traced_matches)
     return keyframes
@@ -71,7 +71,7 @@ frames_total = int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 pts = pd.read_csv(REF_POINTS_0, sep=',', header=None, dtype=float).values
 dst = pts[:4]  # axis points from first frame
 
-keyframes = find_key_frames(reader, 0, 17)
+keyframes = find_key_frames(reader, 0, 100)
 # comment on keyframes: each point starts in keyframe, no intermediate tracing
 
 pts1 = []

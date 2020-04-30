@@ -60,6 +60,19 @@ class Matcher(Enum):
     BRUTE_FORCE = 2
 
 
+def get_video_streams():
+    video = cv2.VideoCapture(VIDEO_PATH)
+
+    # Get the Default resolutions
+    frame_width = int(video.get(3))
+    frame_height = int(video.get(4))
+
+    # Define the codec and create VideoWriter object
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = cv2.VideoWriter(VIDEO_OUT_STEREO_PATH, fourcc, 20.0, (frame_width, frame_height))
+    return video, out
+
+
 def load_interm(camera_matrix, camera_dist_coeff):
     global K
     global dist

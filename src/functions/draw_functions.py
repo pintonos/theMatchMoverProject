@@ -22,6 +22,13 @@ def draw_cube(img, pts):
     cv2.line(img, (pts[1][0], pts[1][1]), (pts[5][0], pts[5][1]), (255, 0, 0), 2)
 
 
+def draw_axis(img, points):
+    points = np.int32(points).reshape(-1, 2)
+    cv2.line(img, tuple(points[0]), tuple(points[1]), (255, 0, 0), 3)
+    cv2.line(img, tuple(points[0]), tuple(points[2]), (0, 255, 0), 3)
+    cv2.line(img, tuple(points[0]), tuple(points[3]), (0, 0, 255), 3)
+
+
 def draw_points(img, pts, i_init=0):
     for i, pt in enumerate(pts):
         cv2.circle(img, (pt[0], pt[1]), 3, (255, 0, 0), -1)

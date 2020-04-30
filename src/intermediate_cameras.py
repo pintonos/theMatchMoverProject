@@ -1,5 +1,6 @@
 from functions import *
 import cv2
+import pandas as pd
 
 MIN_MATCHES = 50
 
@@ -37,7 +38,7 @@ def find_key_frames(video, idx1, idx2):
 
             if traced_matches is None:
                 traced_matches = [{
-                    'start_frame': curr_idx -1,
+                    'start_frame': curr_idx - 1,
                     'coordinates': [match_points_1[i], match_points_2[i]],
                     'from': x.queryIdx,
                     'to': x.trainIdx} for i, x in enumerate(matches)]
@@ -64,10 +65,47 @@ def find_key_frames(video, idx1, idx2):
     return keyframes
 
 
-video = cv2.VideoCapture(VIDEO_PATH)
-frames_total = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+reader, writer = get_video_streams()
+frames_total = int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 
-keyframes = find_key_frames(video, 0, 3)
-print(len(keyframes))
+pts = pd.read_csv(REF_POINTS_0, sep=',', header=None, dtype=float).values
+dst = pts[:4]  # axis points from first frame
 
-video.release()
+keyframes = find_key_frames(reader, 0, 17)
+# comment on keyframes: each point starts in keyframe, no intermediate tracing
+
+pts1 = []
+pts2 = []
+for keyframe in keyframes:
+    # homography between consecutive frames
+    number_intermediate_frames = len(keyframe[0]['coordinates'])
+
+    # get points in format [[img1_kp1, img1_kp2, ...], [img2_kp1, img2_kp2, ...], ...]
+    pts_list = []
+    for i in range(number_intermediate_frames):
+        pts = []
+        for frame in keyframe:
+            pts.append(frame['coordinates'][i])
+        pts_list.append(pts)
+    pts_list = np.asarray(pts_list)
+
+    current_frame_idx = keyframe[0]['start_frame']
+    for i in range(len(pts_list)-1):
+        # get homography between each pair of frames between keyframes
+        M, _ = cv2.findHomography(pts_list[i], pts_list[i+1], cv2.RANSAC, 5.0)
+        dst = cv2.perspectiveTransform(dst.reshape(-1, 1, 2), M)
+
+        # read frame at index
+        reader.set(cv2.CAP_PROP_POS_FRAMES, current_frame_idx)
+        current_frame_idx += 1
+        _, current_frame = reader.read()
+
+        draw_axis(current_frame, dst)
+        writer.write(current_frame)
+
+    # break after first keyframe
+    # TODO resectioning
+    break
+
+reader.release()
+writer.release()

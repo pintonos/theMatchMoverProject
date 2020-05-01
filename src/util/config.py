@@ -43,6 +43,9 @@ VIDEO_OUT_STEREO_PATH = DATA_PATH + 'output_stereo.avi'
 CAMERA_MATRIX = DATA_PATH + 'cmatrix.npy'
 CAMERA_DIST_COEFF = DATA_PATH + 'dist.npy'
 REF_POINTS_0 = DATA_PATH + 'reference_0.csv'
+REF_POINTS_10 = DATA_PATH + 'reference_10.csv'
+REF_POINTS_18 = DATA_PATH + 'reference_18.csv'
+REF_POINTS_34 = DATA_PATH + 'reference_34.csv'
 REF_POINTS_100 = DATA_PATH + 'reference_100.csv'
 
 K, dist = None, None

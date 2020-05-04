@@ -14,7 +14,7 @@ MAX_FPS = 50
 MIN_MATCHES = 200
 
 
-def find_key_frames(video, idx1, idx2):
+def find_key_frames(video, idx1, idx2, early_stoppage=False):
     '''
     finds point matches that are preserved between idx1 and idx2
     :param video: video file with more than |idx2| frames
@@ -23,6 +23,7 @@ def find_key_frames(video, idx1, idx2):
     :return: list of dict with structure [{'startPoint': 2DPoint, 'endPoint': 2DPoint}],
         startPoint is the 2DPoint of the first frame, endPoint is the 2DPoint of the last frame
     '''
+    print("find keyframes between " + str(idx1) + " and " + str(idx2))
     if idx2 - idx1 <= 0:
         print("warning, called find_trace_points with 0 or negative frame indexes")
         return []
@@ -32,7 +33,7 @@ def find_key_frames(video, idx1, idx2):
     keyframes = []
     traced_matches = None
     last_frame = None
-
+    keyframe_found = False
     while success and curr_idx < idx2 - 1:
         success, frame = video.read()
         curr_idx += 1
@@ -63,11 +64,16 @@ def find_key_frames(video, idx1, idx2):
 
             traced_matches = list(filter(lambda m: m['to'] is not None, traced_matches))
 
+            if keyframe_found and early_stoppage:
+                break
+
             if len(traced_matches) <= MIN_MATCHES:
                 # new keyframe
-                print('found keyframe at pos ' + str(curr_idx))
+                print('found keyframe at pos ' + str(curr_idx + idx1))
                 keyframes.append(traced_matches)
                 traced_matches = None
+                keyframe_found = True
+
         last_frame = frame
 
     keyframes.append(traced_matches)
@@ -82,7 +88,9 @@ pts34 = pd.read_csv(REF_POINTS_34, sep=',', header=None, dtype=float).values
 pts100 = pd.read_csv(REF_POINTS_100, sep=',', header=None, dtype=float).values
 
 reader, writer = get_video_streams()
-keyframes = find_key_frames(reader, 0, 19)
+keyframes = find_key_frames(reader, 0, MAX_FPS, early_stoppage=True)
+while True:
+    keyframes = keyframes + find_key_frames(reader, len(keyframes[-2][0]['coordinates'])//2, MAX_FPS, early_stoppage=True)
 
 pts_list = []
 for i in range(19):

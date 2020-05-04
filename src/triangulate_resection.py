@@ -33,7 +33,6 @@ def find_key_frames(video, idx1, idx2, early_stoppage=False):
     keyframes = []
     traced_matches = None
     last_frame = None
-    keyframe_found = False
     while success and curr_idx < idx2 - 1:
         success, frame = video.read()
         curr_idx += 1
@@ -64,19 +63,19 @@ def find_key_frames(video, idx1, idx2, early_stoppage=False):
 
             traced_matches = list(filter(lambda m: m['to'] is not None, traced_matches))
 
-            if keyframe_found and early_stoppage:
-                break
-
             if len(traced_matches) <= MIN_MATCHES:
                 # new keyframe
                 print('found keyframe at pos ' + str(curr_idx + idx1))
                 keyframes.append(traced_matches)
                 traced_matches = None
-                keyframe_found = True
+                if early_stoppage:
+                    break
 
         last_frame = frame
 
-    keyframes.append(traced_matches)
+    if not early_stoppage:
+        keyframes.append(traced_matches)
+
     return keyframes
 
 
@@ -88,33 +87,43 @@ pts34 = pd.read_csv(REF_POINTS_34, sep=',', header=None, dtype=float).values
 pts100 = pd.read_csv(REF_POINTS_100, sep=',', header=None, dtype=float).values
 
 reader, writer = get_video_streams()
+
 keyframes = find_key_frames(reader, 0, MAX_FPS, early_stoppage=True)
-while True:
-    keyframes = keyframes + find_key_frames(reader, len(keyframes[-2][0]['coordinates'])//2, MAX_FPS, early_stoppage=True)
+curr_idx = 0
+while curr_idx < MAX_FPS:
+    curr_idx = curr_idx + len(keyframes[-1][0]['coordinates'])
+    if len(keyframes) > 1:
+        range_idx = curr_idx - len(keyframes[-2][0]['coordinates'])
+    else:
+        range_idx = len(keyframes[-1][0]['coordinates'])
 
-pts_list = []
-for i in range(19):
-    pts = []
-    for frame in keyframes[0]:
-        pts.append(frame['coordinates'][i])
-    pts_list.append(pts)
-pts_array = np.asarray(pts_list)
+    keyframes = keyframes + find_key_frames(reader, curr_idx - (range_idx // 2), MAX_FPS, early_stoppage=True)
 
-keyframe_pts = pts_array
+keyframe_pts = []
+for k in keyframes:
+    pts_list = []
+    for i in range(len(k[0]['coordinates'])):
+        pts = []
+        for frame in k:
+            pts.append(frame['coordinates'][i])
+        pts_list.append(pts)
+    keyframe_pts.append(np.asarray(pts_list))
+
+#print(keyframe_pts)
 
 R1, t1 = INIT_ORIENTATION, INIT_POSITION
-R2, t2 = get_R_and_t(keyframe_pts[0], keyframe_pts[18], K)
+R2, t2 = get_R_and_t(keyframe_pts[0][0], keyframe_pts[0][18], K)
 
 # get world points of axis
 axis, _ = get_3d_world_points(R1, t1, R2, t2, pts0, pts18, dist, K)
 # print(axis)
 # axis = get_3d_axis()
-print(axis)
+# print(axis)
 
 # get world points
-_, world_coords = get_3d_world_points(R1, t1, R2, t2, keyframe_pts[0], keyframe_pts[18], dist, K)
+_, world_coords = get_3d_world_points(R1, t1, R2, t2, keyframe_pts[0][0], keyframe_pts[0][18], dist, K)
 
-ret, R, T, inliers = cv2.solvePnPRansac(world_coords, keyframe_pts[12], K, dist,
+ret, R, T, inliers = cv2.solvePnPRansac(world_coords, keyframe_pts[0][12], K, dist,
                                         reprojectionError=20.0)
 
 points2d, _ = cv2.projectPoints(axis, R, T, K, dist)
@@ -122,6 +131,7 @@ points2d, _ = cv2.projectPoints(axis, R, T, K, dist)
 img = cv2.imread(DATA_PATH + 'img_12.jpg')
 draw_points(img, functools.reduce(operator.iconcat, points2d.astype(int).tolist(), []))
 cv2.imshow('img', cv2.resize(img, DEMO_RESIZE))
+cv2.waitKey(0)
 
 '''
 img = cv2.imread(DATA_PATH + 'img_0.jpg')
@@ -143,4 +153,4 @@ ret, mtx, dist_tmp, rvecs, tvecs = cv2.calibrateCamera([world_coords],
                                                        flags=cv2.CALIB_USE_INTRINSIC_GUESS)
 '''
 
-cv2.waitKey(0)
+

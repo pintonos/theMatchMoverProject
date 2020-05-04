@@ -11,7 +11,7 @@ if K is None or dist is None:
     raise Exception('Camera matrix or distortion coefficient not found')
 
 MAX_FPS = 50
-MIN_MATCHES = 100
+MIN_MATCHES = 200
 
 
 def find_key_frames(video, idx1, idx2):
@@ -82,7 +82,7 @@ pts34 = pd.read_csv(REF_POINTS_34, sep=',', header=None, dtype=float).values
 pts100 = pd.read_csv(REF_POINTS_100, sep=',', header=None, dtype=float).values
 
 reader, writer = get_video_streams()
-keyframes = find_key_frames(reader, 0, 35)
+keyframes = find_key_frames(reader, 0, 19)
 
 pts_list = []
 for i in range(19):
@@ -99,18 +99,40 @@ R2, t2 = get_R_and_t(keyframe_pts[0], keyframe_pts[18], K)
 
 # get world points of axis
 axis, _ = get_3d_world_points(R1, t1, R2, t2, pts0, pts18, dist, K)
+# print(axis)
+# axis = get_3d_axis()
 print(axis)
 
 # get world points
 _, world_coords = get_3d_world_points(R1, t1, R2, t2, keyframe_pts[0], keyframe_pts[18], dist, K)
 
-ret, R, T, inliers = cv2.solvePnPRansac(world_coords, keyframe_pts[10], K, dist,
+ret, R, T, inliers = cv2.solvePnPRansac(world_coords, keyframe_pts[12], K, dist,
                                         reprojectionError=20.0)
 
 points2d, _ = cv2.projectPoints(axis, R, T, K, dist)
 
-img = cv2.imread(DATA_PATH + 'img_10.jpg')
+img = cv2.imread(DATA_PATH + 'img_12.jpg')
 draw_points(img, functools.reduce(operator.iconcat, points2d.astype(int).tolist(), []))
-cv2.imshow('img', img)
+cv2.imshow('img', cv2.resize(img, DEMO_RESIZE))
+
+'''
+img = cv2.imread(DATA_PATH + 'img_0.jpg')
+points2d, _ = cv2.projectPoints(axis, R1, t1, K, dist)
+draw_points(img, functools.reduce(operator.iconcat, points2d.astype(int).tolist(), []))
+cv2.imshow('img0', img)
+
+img = cv2.imread(DATA_PATH + 'img_34.jpg')
+points2d, _ = cv2.projectPoints(axis, R2, t2, K, dist)
+draw_points(img, functools.reduce(operator.iconcat, points2d.astype(int).tolist(), []))
+cv2.imshow('img34', img)
+
+_, world_coords = get_3d_world_points(R1, t1, R2, t2, keyframe_pts[0], keyframe_pts[34], dist, K)
+
+ret, mtx, dist_tmp, rvecs, tvecs = cv2.calibrateCamera([world_coords],
+                                                       [keyframe_pts[0]],
+                                                       (1080, 1920),
+                                                       cameraMatrix=K, distCoeffs=dist,
+                                                       flags=cv2.CALIB_USE_INTRINSIC_GUESS)
+'''
 
 cv2.waitKey(0)

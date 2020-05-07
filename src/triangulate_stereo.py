@@ -27,18 +27,3 @@ img_points1_2d, _ = cv2.projectPoints(world_coords_axis, r_vec1, t1, K, dist)
 r_vec2, _ = cv2.Rodrigues(R2)
 img_points2_2d, _ = cv2.projectPoints(world_coords_axis, r_vec2, t2, K, dist)
 
-
-# Read images
-img_1 = cv2.imread(DATA_PATH + 'img_0.jpg')
-img_2 = cv2.imread(DATA_PATH + 'img_100.jpg')
-
-# draw reference points
-draw_points(img_1, pts1.astype(int))
-draw_points(img_2, pts2.astype(int))
-
-# show images
-plot_show_img(img_1, img_points1_2d, REF_POINTS_0, axis=True)
-plot_show_img(img_2, img_points2_2d, REF_POINTS_100, axis=True)
-
-cv2.waitKey(0)
-

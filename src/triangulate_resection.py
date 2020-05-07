@@ -10,7 +10,7 @@ import pandas as pd
 if K is None or dist is None:
     raise Exception('Camera matrix or distortion coefficient not found')
 
-MAX_FPS = 40
+MAX_FPS = 80
 MIN_MATCHES = 200
 
 
@@ -81,13 +81,6 @@ def find_next_key_frame(video, idx1, idx2):
         return keyframes, None
 
 
-# get point correspondences
-pts0 = pd.read_csv(REF_POINTS_0, sep=',', header=None, dtype=float).values
-pts10 = pd.read_csv(REF_POINTS_10, sep=',', header=None, dtype=float).values
-pts18 = pd.read_csv(REF_POINTS_18, sep=',', header=None, dtype=float).values
-pts34 = pd.read_csv(REF_POINTS_34, sep=',', header=None, dtype=float).values
-pts100 = pd.read_csv(REF_POINTS_100, sep=',', header=None, dtype=float).values
-
 reader, writer = get_video_streams()
 
 keyframes, keyframe_idx = find_next_key_frame(reader, 0, MAX_FPS)
@@ -109,53 +102,45 @@ for k in keyframes:
             pts.append(frame['coordinates'][i])
         pts_list.append(pts)
     keyframe_pts.append(np.asarray(pts_list))
-'''
-# check match points
-img = cv2.imread(DATA_PATH + 'img_10.jpg')
-draw_points(img, keyframe_pts[1][0])
-cv2.imshow('img_10', cv2.resize(img, DEMO_RESIZE))
 
-img = cv2.imread(DATA_PATH + 'img_38.jpg')
-draw_points(img, keyframe_pts[1][-1])
-cv2.imshow('img_38', cv2.resize(img, DEMO_RESIZE))
-
-cv2.waitKey(0)'''
 
 R0, t0 = INIT_ORIENTATION, INIT_POSITION
+
+# get axis from frame 0 and 100
+axis = get_3d_axis()
+
+# first keyframe
 R2, t2 = get_R_and_t(keyframe_pts[0][0], keyframe_pts[0][-1], K)
+_, world_coords_1 = get_3d_world_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pts[0][-1], dist, K)
+_, R2, t2, _ = cv2.solvePnPRansac(world_coords_1, keyframe_pts[0][0], K, dist, reprojectionError=20.0)
+points2d_1, _ = cv2.projectPoints(axis, R2, t2, K, dist)
 
-# get world points of axis
-axis, _ = get_3d_world_points(R0, t0, R2, t2, pts0, pts18, dist, K)
-# print(axis)
-# axis = get_3d_axis()
-# print(axis)
-
-# get world points
-_, world_coords1 = get_3d_world_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pts[0][-1], dist, K)
-_, R1, t1, _ = cv2.solvePnPRansac(world_coords1, keyframe_pts[0][9], K, dist,
-                                  reprojectionError=20.0)
-
-points2d, _ = cv2.projectPoints(axis, R1, t1, K, dist)
-
-# works
-#img = cv2.imread(DATA_PATH + 'img_9.jpg')
-#draw_points(img, functools.reduce(operator.iconcat, points2d.astype(int).tolist(), []))
-#cv2.imshow('img_9', cv2.resize(img, DEMO_RESIZE))
-
-
-# check R2, t2 with new approach
-R1, _ = cv2.Rodrigues(R1, dst=dist)
+# second keyframe
+R2 = cv2.Rodrigues(R2)[0]
 R3, t3 = get_R_and_t(keyframe_pts[1][0], keyframe_pts[1][-1], K)
-_, world_coords2 = get_3d_world_points(R1, t1, R3, t3, keyframe_pts[1][0], keyframe_pts[1][-1], dist, K)
+_, world_coords_2 = get_3d_world_points(R2, t2, R3, t3, keyframe_pts[1][0], keyframe_pts[1][-1], dist, K)
+_, R3, t3, _ = cv2.solvePnPRansac(world_coords_2, keyframe_pts[1][0], K, dist, reprojectionError=20.0)
+points2d_2, _ = cv2.projectPoints(axis, R3, t3, K, dist)
 
-_, R2, t2, _ = cv2.solvePnPRansac(world_coords2, keyframe_pts[1][7], K, dist,
-                                        reprojectionError=20.0)
+# third keyframe
+R3 = cv2.Rodrigues(R3)[0]
+R4, t4 = get_R_and_t(keyframe_pts[2][0], keyframe_pts[2][-1], K)
+_, world_coords_3 = get_3d_world_points(R3, t3, R4, t4, keyframe_pts[2][0], keyframe_pts[2][-1], dist, K)
+_, R4, t4, _ = cv2.solvePnPRansac(world_coords_3, keyframe_pts[2][0], K, dist, reprojectionError=20.0)
+points2d_3, _ = cv2.projectPoints(axis, R4, t4, K, dist)
 
-points2d, _ = cv2.projectPoints(get_3d_axis(), R2, t2, K, dist) # TODO check 3d axis?
+# draw
+img1 = cv2.imread(DATA_PATH + 'img_0.jpg')
+draw_points(img1, functools.reduce(operator.iconcat, points2d_1.astype(int).tolist(), []))
+cv2.imshow('img_0', cv2.resize(img1, DEMO_RESIZE))
 
-img = cv2.imread(DATA_PATH + 'img_18.jpg')
-draw_points(img, functools.reduce(operator.iconcat, points2d.astype(int).tolist(), []))
-cv2.imshow('img_18', cv2.resize(img, DEMO_RESIZE))
+img2 = cv2.imread(DATA_PATH + 'img_18.jpg')
+draw_points(img2, functools.reduce(operator.iconcat, points2d_2.astype(int).tolist(), []))
+cv2.imshow('img_18', cv2.resize(img2, DEMO_RESIZE))
+
+img2 = cv2.imread(DATA_PATH + 'img_34.jpg')
+draw_points(img2, functools.reduce(operator.iconcat, points2d_3.astype(int).tolist(), []))
+cv2.imshow('img_34', cv2.resize(img2, DEMO_RESIZE))
 cv2.waitKey(0)
 
 

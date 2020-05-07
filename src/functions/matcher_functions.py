@@ -108,7 +108,7 @@ def get_brute_force_matches(kp1, des1, kp2, des2, detector, ratioTest=True):
     return np.int32(pts1), np.int32(pts2), good_matches
 
 
-def get_points(img1, img2, detector=Detector.SIFT, filter=True, matcher=Matcher.BRUTE_FORCE, showMatches=False):
+def get_points(img1, img2, detector=Detector.ORB, filter=True, matcher=Matcher.BRUTE_FORCE, showMatches=False):
 
     gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
     gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)

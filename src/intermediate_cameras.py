@@ -1,124 +1,51 @@
+import functools
+import operator
+
 from functions import *
 import cv2
 import pandas as pd
 
-MIN_MATCHES = 200
+MAX_FPS = 20
 
+keyframes, keyframe_idx = find_next_key_frame(0, MAX_FPS)
+while keyframe_idx and keyframe_idx < MAX_FPS:
+    if len(keyframes) > 1:
+        range_idx = keyframe_idx - len(keyframes[-2][0]['coordinates'])
+    else:
+        range_idx = len(keyframes[-1][0]['coordinates'])
 
-def find_key_frames(video, idx1, idx2):
-    '''
-    finds point matches that are preserved between idx1 and idx2
-    :param video: video file with more than |idx2| frames
-    :param idx1: index to start with
-    :param idx2: index to end with
-    :return: list of dict with structure [{'startPoint': 2DPoint, 'endPoint': 2DPoint}],
-        startPoint is the 2DPoint of the first frame, endPoint is the 2DPoint of the last frame
-    '''
-    if idx2 - idx1 <= 0:
-        print("warning, called find_trace_points with 0 or negative frame indexes")
-        return []
+    tmp_kf, keyframe_idx = find_next_key_frame(keyframe_idx - (range_idx // 2), MAX_FPS)
+    keyframes = keyframes + tmp_kf
 
-    curr_idx = -1
-    success = True
-    keyframes = []
-    traced_matches = None
-    last_frame = None
+keyframe_pts = []
+for k in keyframes:
+    pts_list = []
+    for i in range(len(k[0]['coordinates'])):
+        pts = []
+        for frame in k:
+            pts.append(frame['coordinates'][i])
+        pts_list.append(pts)
+    keyframe_pts.append(np.asarray(pts_list))
 
-    while success and curr_idx < idx2 - 1:
-        success, frame = video.read()
-        curr_idx += 1
+R0, t0 = INIT_ORIENTATION, INIT_POSITION
+R2, t2 = get_R_and_t(keyframe_pts[0][0], keyframe_pts[0][-1], K)
+axis = get_3d_axis(R2, t2)
 
-        if curr_idx <= idx1:
-            last_frame = frame
-            continue
-
-        # trace
-        match_points_1, match_points_2, matches = get_points(last_frame, frame)
-
-        if traced_matches is None:
-            traced_matches = [{
-                'start_frame': curr_idx - 1,
-                'coordinates': [match_points_1[i], match_points_2[i]],
-                'from': x.queryIdx,
-                'to': x.trainIdx} for i, x in enumerate(matches)]
-        else:
-            new_matches = dict([(x.queryIdx, x.trainIdx) for x in matches])
-            for match in traced_matches:
-                new_from = match['to']
-                if new_from in new_matches:
-                    match['from'] = new_from
-                    match['to'] = new_matches[new_from]
-                    match['coordinates'].append(match_points_2[list(new_matches.keys()).index(new_from)])
-                else:
-                    match['to'] = None
-
-            traced_matches = list(filter(lambda m: m['to'] is not None, traced_matches))
-
-            if len(traced_matches) <= MIN_MATCHES:
-                # new keyframe
-                print('found keyframe at pos ' + str(curr_idx + 1))
-                keyframes.append(traced_matches)
-                traced_matches = None
-        last_frame = frame
-
-    keyframes.append(traced_matches)
-    return keyframes
-
+_, world_coords = get_3d_world_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pts[0][-1], dist, K)
 
 reader, writer = get_video_streams()
 frames_total = int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
+for i, frame in enumerate(keyframe_pts[0]):
+    _, R, t, _ = cv2.solvePnPRansac(world_coords, keyframe_pts[0][i], K, dist, reprojectionError=1.0) # TODO check reprojectionError makes big difference!
+    points2d, _ = cv2.projectPoints(axis, R, t, K, dist)
 
-pts = pd.read_csv(REF_POINTS_0, sep=',', header=None, dtype=float).values
-dst = pts[:4]  # axis points from first frame
+    _, img = reader.read()
+    draw_points(img, functools.reduce(operator.iconcat, points2d.astype(int).tolist(), []))
 
-keyframes = find_key_frames(reader, 0, 20)
-# comment on keyframes: each point starts in keyframe, no intermediate tracing
+    writer.write(img)
 
-reader.release()
-reader, _ = get_video_streams()
-
-R1, t1 = INIT_ORIENTATION, INIT_POSITION
-
-for keyframe in keyframes:
-    # homography between consecutive frames
-    number_intermediate_frames = len(keyframe[0]['coordinates'])
-
-    # get points in format [[img1_kp1, img1_kp2, ...], [img2_kp1, img2_kp2, ...], ...]
-    pts_list = []
-    for i in range(number_intermediate_frames):
-        pts = []
-        for frame in keyframe:
-            pts.append(frame['coordinates'][i])
-        pts_list.append(pts)
-    pts_array = np.asarray(pts_list)
-
-    world_coordinates = []
-    current_frame_idx = keyframe[0]['start_frame']
-    for i in range(len(pts_list)-1):
-        # get homography between each pair of frames between keyframes
-        M, _ = cv2.findHomography(pts_array[i], pts_array[i+1], cv2.RANSAC, 5.0)
-        dst = cv2.perspectiveTransform(dst.reshape(-1, 1, 2), M)
-
-        # read frame at index
-        _, current_frame = reader.read()
-
-        draw_axis(current_frame, dst)
-        writer.write(current_frame)
-
-        R2, t2 = get_R_and_t(pts_array[i], pts_array[i+1], K)
-        _, world_coords = get_3d_world_points(R1, t1, R2, t2, pts_array[i], pts_array[i+1], dist, K)
-        world_coordinates.append(world_coords)
-
-    ret, mtx, dist_tmp, rvecs, tvecs = cv2.calibrateCamera(world_coordinates, pts_array[:-1], (1080, 1920),
-                                                           cameraMatrix=K, distCoeffs=dist,
-                                                           flags=cv2.CALIB_USE_INTRINSIC_GUESS + cv2.CALIB_FIX_K3)  # TODO shape
-    print(mtx)
-    print(dist_tmp)
-    # TODO R1, t1 =
-
-    # break after first keyframe
-    # TODO resectioning
-    break
+    cv2.imshow('img', cv2.resize(img, DEMO_RESIZE))
+    cv2.waitKey(1000)
 
 reader.release()
 writer.release()

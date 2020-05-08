@@ -1,4 +1,6 @@
 from util import *
+import pandas as pd
+from functions import *
 
 """ Functions to draw points and shapes into an image
 """
@@ -35,9 +37,26 @@ def draw_points(img, pts, i_init=0):
         cv2.putText(img, str(i + i_init), (pt[0], pt[1]), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 1)
 
 
-def get_3d_axis():
-    """
-    world frames of axis, triangulated between frame 0 and 100
-    """
-    return np.float32([[0.48004413, 0.21423042, 2.0474179], [0.50754553, 0.09758199, 2.1601412],
-                       [0.8129302,  0.22362995, 1.9758732], [0.4802751,  0.24871479, 2.059794]])
+def get_P(R, t, K):
+    Rt = np.c_[R, t]
+    return np.dot(K, Rt)
+
+
+def get_3d_axis(R2, t2):
+
+    pts1 = pd.read_csv(REF_POINTS_0, sep=',', header=None, dtype=float).values
+    pts2 = pd.read_csv(REF_POINTS_18, sep=',', header=None, dtype=float).values
+
+    P1 = get_P(INIT_ORIENTATION, INIT_POSITION, K)
+    P2 = get_P(R2, t2, K)
+
+    pts1 = pts1[:4]
+    pts2 = pts2[:4]
+
+    object_points = []
+    for p1, p2 in list(zip(pts1, pts2)):
+        ret = cv2.triangulatePoints(P1, P2, np.array([p1[0], p1[1]]), np.array([p2[0], p2[1]]))
+        object_points.append(ret)
+    object_points = cv2.convertPointsFromHomogeneous(np.array(object_points))
+
+    return object_points

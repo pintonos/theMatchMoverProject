@@ -3,9 +3,9 @@ import operator
 
 from functions import *
 import cv2
-import pandas as pd
 
-MAX_FPS = 20
+reader, writer = get_video_streams()
+MAX_FPS = 140  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 
 keyframes, keyframe_idx = find_next_key_frame(0, MAX_FPS)
 while keyframe_idx and keyframe_idx < MAX_FPS:
@@ -33,19 +33,30 @@ axis = get_3d_axis(R2, t2)
 
 _, world_coords = get_3d_world_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pts[0][-1], dist, K)
 
-reader, writer = get_video_streams()
-frames_total = int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
-for i, frame in enumerate(keyframe_pts[0]):
-    _, R, t, _ = cv2.solvePnPRansac(world_coords, keyframe_pts[0][i], K, dist, reprojectionError=1.0) # TODO check reprojectionError makes big difference!
-    points2d, _ = cv2.projectPoints(axis, R, t, K, dist)
+for i, keyframe in enumerate(keyframe_pts):
 
-    _, img = reader.read()
-    draw_points(img, functools.reduce(operator.iconcat, points2d.astype(int).tolist(), []))
+    # new keyframe by resectioning
+    if i != 0:
+        R_half, _ = cv2.Rodrigues(R_half)
+        R, _ = cv2.Rodrigues(R)
+        _, world_coords = get_3d_world_points(R_half, t_half, R, t, keyframe_pts[i][0], keyframe_pts[i][-1], dist, K)
+        _, R, t, _ = cv2.solvePnPRansac(world_coords, keyframe_pts[i][-1], K, dist, reprojectionError=1.0)
 
-    writer.write(img)
+    # fill between keyframes
+    for j, frame in enumerate(keyframe_pts[i]):
+        _, R, t, _ = cv2.solvePnPRansac(world_coords, keyframe_pts[i][j], K, dist, reprojectionError=1.0) # TODO check reprojectionError makes big difference!
+        if j == len(keyframe_pts[i]) // 2:
+            R_half, t_half = R, t
+        points2d, _ = cv2.projectPoints(axis, R, t, K, dist)
 
-    cv2.imshow('img', cv2.resize(img, DEMO_RESIZE))
-    cv2.waitKey(1000)
+        _, img = reader.read()
+        draw_axis(img, points2d)
+
+        writer.write(img)
+
+        cv2.imshow('img', cv2.resize(img, DEMO_RESIZE))
+        cv2.waitKey(500)
+
 
 reader.release()
 writer.release()

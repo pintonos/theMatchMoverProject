@@ -63,6 +63,19 @@ class Matcher(Enum):
     BRUTE_FORCE = 2
 
 
+class Camera:
+    def __init__(self, R, t):
+        if R.shape[1]:
+            self.R = R
+        else:
+            self.R, _ = cv2.Rodrigues(R)
+
+        self.t = t
+
+    def get_camera_matrix(self):
+        return np.c_[self.R, self.t]
+
+
 def get_video_streams():
     video = cv2.VideoCapture(VIDEO_PATH)
 

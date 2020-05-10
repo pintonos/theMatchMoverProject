@@ -117,32 +117,26 @@ def buildCamera(R, t, K, dist):
     return camera
 
 def prepareData(cameras, points3d, points2d):
-    camera_params = np.empty((len(cameras), 9))
+    camera_params = np.empty((0, 9))
     for c in cameras:
         R, _ = cv2.Rodrigues(c.R)
         camera = buildCamera(R, c.t, K, dist)
         camera_params = np.append(camera_params, [camera], axis=0)
 
-    camera_indices = np.empty((len(points2d.flatten)))
-    point_indices = np.empty((len(points2d.flatten)))
-    points_2d = np.empty((len(points2d.flatten), 2))
+    camera_indices = np.empty(0, dtype=int)
+    point_indices = np.empty(0, dtype=int)
+    points_2d = np.empty((0, 2))
     for i, pts_2d in enumerate(points2d):
-        camera_indices = np.append(camera_indices, [np.asarray(list(repeat(i, len(pts_2d.flatten()))))], axis=0)
-        point_indices = np.append(point_indices, [np.asarray([i for i in range(len(pts_2d.flatten()))])], axis=0)
-        points_2d = np.vstack(points_2d, np.squeeze(pts_2d, axis=1))
+        camera_indices = np.append(camera_indices, np.asarray(list(repeat(i, len(pts_2d)))), axis=0)
+        point_indices = np.append(point_indices, np.asarray([i for i in range(len(pts_2d))]), axis=0)
+        points_2d = np.vstack((points_2d, np.squeeze(pts_2d, axis=1)))
 
     points_3d = np.squeeze(points3d, axis=1)
 
     return camera_params, camera_indices, point_indices, points_3d, points_2d
 
-if __name__== "__main__":
-    camera_params, points_3d, camera_indices, point_indices, points_2d = read_bal_data(FILE_NAME)
-
-    print(camera_params.shape)
-    print(points_3d.shape)
-    print(points_2d.shape)
-    print(len(camera_indices))
-    print(len(point_indices))
+def startBundleAdjustment(cameras, points3d, points2d):
+    camera_params, camera_indices, point_indices, points_3d, points_2d = prepareData(cameras, points3d, points2d)
 
     n_cameras = camera_params.shape[0]
     n_points = points_3d.shape[0]
@@ -171,45 +165,34 @@ if __name__== "__main__":
     plt.plot(res.fun)
     plt.show()
 
+    return res.x[n_cameras * 9:].reshape((n_points, 3))
 
-'''
-R0, _ = cv2.Rodrigues(R0)
-R2, _ = cv2.Rodrigues(R2)
-camera0 = buildCamera(R0, t0, K, dist)
-camera2 = buildCamera(R2, t2, K, dist)
-camera_params = np.asarray((camera0, camera2))
-camera_indices = np.asarray(list(repeat(0, len(points2d_0))) + list(repeat(1, len(points2d_2))))
-point_indices = np.asarray([i for i in range(len(points2d_0))] + [i for i in range(len(points2d_0))])
-points_3d = np.squeeze(axis, axis=1)
-points_2d = np.vstack((np.squeeze(points2d_0, axis=1), np.squeeze(points2d_2, axis=1)))
-#point_indices = list(repeat(0, len(keyframe_pts[0][0]))) + list(repeat(1, len(keyframe_pts[0][-1])))
-#points_3d = world_coords1
-#points_2d = keyframe_pts[0][0] + keyframe_pts[0][-1]
+if __name__== "__main__":
+    camera_params, points_3d, camera_indices, point_indices, points_2d = read_bal_data(FILE_NAME)
 
-n_cameras = camera_params.shape[0]
-n_points = points_3d.shape[0]
-n = 9 * n_cameras + 3 * n_points
-m = 2 * points_2d.shape[0]
-print("n_cameras: {}".format(n_cameras))
-print("n_points: {}".format(n_points))
-print("Total number of parameters: {}".format(n))
-print("Total number of residuals: {}".format(m))
+    n_cameras = camera_params.shape[0]
+    n_points = points_3d.shape[0]
+    n = 9 * n_cameras + 3 * n_points
+    m = 2 * points_2d.shape[0]
+    print("n_cameras: {}".format(n_cameras))
+    print("n_points: {}".format(n_points))
+    print("Total number of parameters: {}".format(n))
+    print("Total number of residuals: {}".format(m))
 
-x0 = np.hstack((camera_params.ravel(), points_3d.ravel()))
-print(x0.shape)
-f0 = fun(x0, n_cameras, n_points, camera_indices, point_indices, points_2d)
-plt.plot(f0)
-plt.show()
+    x0 = np.hstack((camera_params.ravel(), points_3d.ravel()))
+    print(x0.shape)
+    f0 = fun(x0, n_cameras, n_points, camera_indices, point_indices, points_2d)
+    plt.plot(f0)
+    plt.show()
 
-A = bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices)
+    A = bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices)
 
-t0 = time.time()
-res = least_squares(fun, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-4, method='trf',
-                    args=(n_cameras, n_points, camera_indices, point_indices, points_2d))
-t1 = time.time()
+    t0 = time.time()
+    res = least_squares(fun, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-4, method='trf',
+                        args=(n_cameras, n_points, camera_indices, point_indices, points_2d))
+    t1 = time.time()
 
-print("Optimization took {0:.0f} seconds".format(t1 - t0))
+    print("Optimization took {0:.0f} seconds".format(t1 - t0))
 
-plt.plot(res.fun)
-plt.show()
-'''
+    plt.plot(res.fun)
+    plt.show()

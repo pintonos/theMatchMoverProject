@@ -5,7 +5,7 @@ from functions import *
 import cv2
 
 reader, writer = get_video_streams()
-MAX_FPS = 140  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
+MAX_FPS = 250  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 
 keyframes, keyframe_idx = find_next_key_frame(0, MAX_FPS)
 while keyframe_idx and keyframe_idx < MAX_FPS:

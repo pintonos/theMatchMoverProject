@@ -21,6 +21,7 @@ URL = BASE_URL + FILE_NAME
 if not os.path.isfile(FILE_NAME):
     urllib.request.urlretrieve(URL, FILE_NAME)
 
+
 def read_bal_data(file_name):
     with bz2.open(file_name, "rt") as file:
         n_cameras, n_points, n_observations = map(
@@ -48,6 +49,7 @@ def read_bal_data(file_name):
 
     return camera_params, points_3d, camera_indices, point_indices, points_2d
 
+
 def rotate(points, rot_vecs):
     """Rotate points by given rotation vectors.
 
@@ -63,6 +65,7 @@ def rotate(points, rot_vecs):
 
     return cos_theta * points + sin_theta * np.cross(v, points) + dot * (1 - cos_theta) * v
 
+
 def project(points, camera_params):
     """Convert 3-D points to 2-D by projecting onto images."""
     points_proj = rotate(points, camera_params[:, :3])
@@ -71,8 +74,8 @@ def project(points, camera_params):
     f = camera_params[:, 6]
     k1 = camera_params[:, 7]
     k2 = camera_params[:, 8]
-    n = np.sum(points_proj**2, axis=1)
-    r = 1 + k1 * n + k2 * n**2
+    n = np.sum(points_proj ** 2, axis=1)
+    r = 1 + k1 * n + k2 * n ** 2
     points_proj *= (r * f)[:, np.newaxis]
     return points_proj
 
@@ -86,6 +89,7 @@ def fun(params, n_cameras, n_points, camera_indices, point_indices, points_2d):
     points_3d = params[n_cameras * 9:].reshape((n_points, 3))
     points_proj = project(points_3d[point_indices], camera_params[camera_indices])
     return (points_proj - points_2d).ravel()
+
 
 def bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices):
     m = camera_indices.size * 2
@@ -103,7 +107,8 @@ def bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indice
 
     return A
 
-def buildCamera(R, t, K, dist):
+
+def build_camera(R, t):
     """
     First 3 components in each row form a rotation vector,
     next 3 components form a translation vector,
@@ -113,16 +118,21 @@ def buildCamera(R, t, K, dist):
     camera = np.append(camera, t.flatten())
     camera = np.append(camera, K[0][0])
     camera = np.append(camera, dist[0, 0:2].flatten())  # TODO our dist in 2 parameter?
-    #print(camera.shape)
     return camera
 
-def prepareData(cameras, points3d, points2d):
+
+def revert_camera_build(bundle_camera_matrix):
+    R = np.asarray(bundle_camera_matrix[0:3]).T.reshape(-1,1)
+    t = np.asarray(bundle_camera_matrix[3:6]).T.reshape(-1,1)
+    return R, t
+
+
+def prepare_data(cameras, points3d, points2d):
     camera_params = np.empty((0, 9))
     for c in cameras:
         R, _ = cv2.Rodrigues(c.R)
-        camera = buildCamera(R, c.t, K, dist)
+        camera = build_camera(R, c.t)
         camera_params = np.append(camera_params, [camera], axis=0)
-
     camera_indices = np.empty(0, dtype=int)
     point_indices = np.empty(0, dtype=int)
     points_2d = np.empty((0, 2))
@@ -135,23 +145,32 @@ def prepareData(cameras, points3d, points2d):
 
     return camera_params, camera_indices, point_indices, points_3d, points_2d
 
-def startBundleAdjustment(cameras, points3d, points2d):
-    camera_params, camera_indices, point_indices, points_3d, points_2d = prepareData(cameras, points3d, points2d)
+
+def optimizedParams(params, n_cameras, n_points):
+    """
+    Retrieve camera parameters and 3-D coordinates.
+    """
+    tmp = params[:n_cameras * 9].reshape((n_cameras, 9))
+    cameras = []
+    for c in tmp:
+        R, t = revert_camera_build(c)
+        cameras.append(Camera(R, t))
+
+    points3d = params[n_cameras * 9:].reshape((n_points, 3))
+
+    return cameras, points3d
+
+
+def start_bundle_adjustment(cameras, points3d, points2d, verbose=False):
+    camera_params, camera_indices, point_indices, points_3d, points_2d = prepare_data(cameras, points3d, points2d)
 
     n_cameras = camera_params.shape[0]
     n_points = points_3d.shape[0]
     n = 9 * n_cameras + 3 * n_points
     m = 2 * points_2d.shape[0]
-    print("n_cameras: {}".format(n_cameras))
-    print("n_points: {}".format(n_points))
-    print("Total number of parameters: {}".format(n))
-    print("Total number of residuals: {}".format(m))
 
     x0 = np.hstack((camera_params.ravel(), points_3d.ravel()))
-    print(x0.shape)
     f0 = fun(x0, n_cameras, n_points, camera_indices, point_indices, points_2d)
-    plt.plot(f0)
-    plt.show()
 
     A = bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices)
 
@@ -160,14 +179,26 @@ def startBundleAdjustment(cameras, points3d, points2d):
                         args=(n_cameras, n_points, camera_indices, point_indices, points_2d))
     t1 = time.time()
 
+    if verbose:
+        print("n_cameras: {}".format(n_cameras))
+        print("n_points: {}".format(n_points))
+        print("Total number of parameters: {}".format(n))
+        print("Total number of residuals: {}".format(m))
+
+        plt.plot(f0)
+        plt.show()
+
+        plt.plot(res.fun)
+        plt.show()
+
     print("Optimization took {0:.0f} seconds".format(t1 - t0))
 
-    plt.plot(res.fun)
-    plt.show()
+    optimized_cameras, optimized_points_3d = optimizedParams(res.x, n_cameras, n_points)
 
-    return res.x[n_cameras * 9:].reshape((n_points, 3))
+    return optimized_cameras, optimized_points_3d
 
-if __name__== "__main__":
+
+if __name__ == "__main__":
     camera_params, points_3d, camera_indices, point_indices, points_2d = read_bal_data(FILE_NAME)
 
     n_cameras = camera_params.shape[0]

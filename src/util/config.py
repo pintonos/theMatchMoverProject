@@ -65,15 +65,18 @@ class Matcher(Enum):
 
 class Camera:
     def __init__(self, R, t):
-        if R.shape[1]:
-            self.R = R
+        if R.shape[1] == 1:
+            self.R, _ = cv2.Rodrigues(R)  # transform to rotation matrix
         else:
-            self.R, _ = cv2.Rodrigues(R)
+            self.R = R
 
         self.t = t
 
     def get_camera_matrix(self):
         return np.c_[self.R, self.t]
+
+    def __str__(self):
+        return str(np.c_[self.R, self.t])
 
 
 def get_video_streams():

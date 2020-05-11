@@ -79,9 +79,19 @@ cv2.waitKey(0)'''
 
 
 cameras = [Camera(R0, t0), Camera(R2, t2)]
-adjusted_3d_coords = startBundleAdjustment(cameras, axis, np.asarray([points2d_0, points2d_2]))
+optimized_cameras, optimized_points3d = start_bundle_adjustment(cameras, axis, np.asarray([points2d_0, points2d_2]), verbose=False)
 print(axis)
-print(adjusted_3d_coords)
+print(optimized_points3d)
+
+print(cameras[0])
+print(optimized_cameras[0])
+
+points2d_0, _ = cv2.projectPoints(optimized_points3d, optimized_cameras[0].R, optimized_cameras[0].t, K, dist)
+img0 = cv2.imread(DATA_PATH + 'img_0.jpg')
+draw_points(img0, functools.reduce(operator.iconcat, points2d_0.astype(int).tolist(), []))
+cv2.imshow('img_0', cv2.resize(img0, DEMO_RESIZE))
+
+cv2.waitKey(0)
 
 
 

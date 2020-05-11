@@ -39,7 +39,13 @@ for i, keyframe in enumerate(keyframe_pts):
     if i != 0:
         R_half, _ = cv2.Rodrigues(R_half)
         R, _ = cv2.Rodrigues(R)
-        _, world_coords = get_3d_world_points(R_half, t_half, R, t, keyframe_pts[i][0], keyframe_pts[i][len(keyframe_pts[i])//2 - 1], dist, K)
+
+        F = get_F(keyframe_pts[i][0], keyframe_pts[i][-1], K)
+        pts1 = np.reshape(keyframe_pts[i][0], (1, len(keyframe_pts[i][0]), 2))
+        pts2 = np.reshape(keyframe_pts[i][len(keyframe_pts[i])//2 - 1], (1, len(keyframe_pts[i][len(keyframe_pts[i])//2 - 1]), 2))
+        pts1, pts2 = cv2.correctMatches(F, pts1, pts2)
+
+        _, world_coords = get_3d_world_points(R_half, t_half, R, t, pts1[0], pts2[0], dist, K)
         _, R, t, _ = cv2.solvePnPRansac(world_coords, keyframe_pts[i][-1], K, dist, reprojectionError=1.0)
 
     # fill between keyframes

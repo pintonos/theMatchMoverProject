@@ -1,8 +1,8 @@
 from __future__ import print_function
-import urllib
 import bz2
 import os
 from itertools import repeat
+from urllib import request
 
 import cv2
 import numpy as np
@@ -19,7 +19,7 @@ FILE_NAME = "problem-49-7776-pre.txt.bz2"
 URL = BASE_URL + FILE_NAME
 
 if not os.path.isfile(FILE_NAME):
-    urllib.request.urlretrieve(URL, FILE_NAME)
+    request.urlretrieve(URL, FILE_NAME)
 
 
 def read_bal_data(file_name):

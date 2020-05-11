@@ -5,7 +5,7 @@ from functions import *
 import cv2
 
 reader, writer = get_video_streams()
-MAX_FPS = 200  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
+MAX_FPS = int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 
 keyframes, keyframe_idx = find_next_key_frame(0, MAX_FPS)
 while keyframe_idx and keyframe_idx < MAX_FPS:
@@ -34,13 +34,13 @@ axis = get_3d_axis(R2, t2)
 _, world_coords = get_3d_world_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pts[0][-1], dist, K)
 
 for i, keyframe in enumerate(keyframe_pts):
-    print(i)
+    print("i", i)
     # new keyframe by resectioning
     if i != 0:
         R_half, _ = cv2.Rodrigues(R_half)
         R, _ = cv2.Rodrigues(R)
 
-        F = get_F(keyframe_pts[i][0], keyframe_pts[i][-1], K)
+        F = get_F(keyframe_pts[i][0], keyframe_pts[i][-1])
         pts1 = np.reshape(keyframe_pts[i][0], (1, len(keyframe_pts[i][0]), 2))
         pts2 = np.reshape(keyframe_pts[i][len(keyframe_pts[i])//2 - 1], (1, len(keyframe_pts[i][len(keyframe_pts[i])//2 - 1]), 2))
         pts1, pts2 = cv2.correctMatches(F, pts1, pts2)
@@ -55,7 +55,8 @@ for i, keyframe in enumerate(keyframe_pts):
         if j == len(keyframe_pts[i]) // 2:
             R_half, t_half = R, t
 
-        if j < len(keyframe_pts[i]) // 2:
+        if j < len(keyframe_pts[i]) // 2 or i == len(keyframe_pts)-1:
+            print("j", j)
             points2d, _ = cv2.projectPoints(axis, R, t, K, dist)
 
             _, img = reader.read()

@@ -25,7 +25,7 @@ def find_next_key_frame(idx1, idx2):
     prev_frame = None
     new_keyframe_pos = 0
     keyframe_found = False
-    while success and curr_idx < idx2 - idx1 - 1:
+    while success and curr_idx < idx2:
         success, frame = video.read()
         curr_idx += 1
 
@@ -57,7 +57,7 @@ def find_next_key_frame(idx1, idx2):
 
             if len(traced_matches) <= MIN_MATCHES:
                 # new keyframe
-                new_keyframe_pos = curr_idx + idx1 + 1
+                new_keyframe_pos = curr_idx + 1
                 print('found keyframe at pos ' + str(new_keyframe_pos))
                 keyframes.append(traced_matches)
                 keyframe_found = True
@@ -68,5 +68,6 @@ def find_next_key_frame(idx1, idx2):
     if keyframe_found:
         return keyframes, new_keyframe_pos
     else:
+        keyframes.append(traced_matches)
         print('no new keyframe found')
         return keyframes, None

@@ -42,10 +42,10 @@ def get_P(R, t, K):
     return np.dot(K, Rt)
 
 
-def get_3d_axis(R2, t2):
+def get_3d_axis(R2, t2, ref_points_1, ref_points_2):
 
-    pts1 = pd.read_csv(REF_POINTS_0, sep=',', header=None, dtype=float).values
-    pts2 = pd.read_csv(REF_POINTS_18, sep=',', header=None, dtype=float).values
+    pts1 = pd.read_csv(ref_points_1, sep=',', header=None, dtype=float).values
+    pts2 = pd.read_csv(ref_points_2, sep=',', header=None, dtype=float).values
 
     P1 = get_P(INIT_ORIENTATION, INIT_POSITION, K)
     P2 = get_P(R2, t2, K)

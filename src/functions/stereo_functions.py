@@ -17,15 +17,15 @@ def invert(R, t):
     return R_inv, t_inv
 
 
-def get_F(pts1, pts2, K):
-    F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.RANSAC)
+def get_F(pts1, pts2):
+    F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.RANSAC)  # TODO try different parameters
     F = F/np.linalg.norm(F)
     return F
 
 
 def get_E_from_F(pts1, pts2, K):
     # Get fundamental Matrix
-    F = get_F(pts1, pts2, K)
+    F = get_F(pts1, pts2)
 
     # Compute E from F
     E = np.dot(np.dot(np.transpose(K), F), K)

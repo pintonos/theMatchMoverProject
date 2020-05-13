@@ -1,52 +1,41 @@
-import functools
-import operator
-
 from functions import *
 import cv2
+import os
 
 reader, writer = get_video_streams()
-MAX_FPS = 150 #int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 
+start_frame = 0
+end_frame = 300  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
+start_idx_path = DATA_PATH + 'start_idx.npy'
+keyframe_pts_path = DATA_PATH + 'keyframe_pts.npy'
 
-keyframes, keyframe_id = find_next_key_frame(0, MAX_FPS)
-keyframe_idx = [keyframe_id]
-start_idx = [0]
-while keyframe_id and keyframe_id < MAX_FPS:
-    if len(keyframes) > 1:
-        start_frame = keyframe_idx[-2]
-    else:
-        start_frame = len(keyframes[0][0]['coordinates']) // 2
+# get keyframes
+if os.path.isfile(keyframe_pts_path) and os.path.isfile(start_idx_path):
+    keyframe_pts = np.load(keyframe_pts_path, allow_pickle=True)
+    start_idx = np.load(start_idx_path, allow_pickle=True)
+else:
+    keyframes, start_idx = get_all_keyframes(start_frame, end_frame)
+    keyframe_pts = get_keyframe_pts(keyframes)
+    # save data
+    np.save(keyframe_pts_path, keyframe_pts)
+    np.save(start_idx_path, start_idx)
 
-    tmp_kf, keyframe_id = find_next_key_frame(start_frame, MAX_FPS)
-    keyframes = keyframes + tmp_kf
-    keyframe_idx.append(keyframe_id)
-    start_idx.append(tmp_kf[0][0]['start_frame'])
+print('keyframes at:', start_idx)
 
-start_idx.append(MAX_FPS)
-
-keyframe_pts = []
-for k in keyframes:
-    pts_list = []
-    for i in range(len(k[0]['coordinates'])):
-        pts = []
-        for frame in k:
-            pts.append(frame['coordinates'][i])
-        pts_list.append(pts)
-    keyframe_pts.append(np.asarray(pts_list))
-
+# get init cameras P0 and P2
 R0, t0 = INIT_ORIENTATION, INIT_POSITION
 R2, t2 = get_R_and_t(keyframe_pts[0][0], keyframe_pts[0][-1], K)
-axis = get_3d_axis(R2, t2)
 
+axis = get_3d_axis(R2, t2)
 _, world_coords = get_3d_world_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pts[0][-1], dist, K)
 
 for i, keyframe in enumerate(keyframe_pts):
-    # new keyframe by resectioning
+    # get new keyframe by resectioning
     if i != 0:
         R_half, _ = cv2.Rodrigues(R_half)
         R, _ = cv2.Rodrigues(R)
 
-        F = get_F(keyframe_pts[i][0], keyframe_pts[i][-1], K)
+        F = get_F(keyframe_pts[i][0], keyframe_pts[i][-1])
         pts1 = np.reshape(keyframe_pts[i][0], (1, len(keyframe_pts[i][0]), 2))
         pts2 = np.reshape(keyframe_pts[i][start_idx[i+1]-start_idx[i]], (1, len(keyframe_pts[i][start_idx[i+1]-start_idx[i]]), 2))
         pts1, pts2 = cv2.correctMatches(F, pts1, pts2)
@@ -56,7 +45,7 @@ for i, keyframe in enumerate(keyframe_pts):
 
     # fill between keyframes
     for j, frame in enumerate(keyframe_pts[i]):
-        _, R, t, _ = cv2.solvePnPRansac(world_coords, keyframe_pts[i][j], K, dist, reprojectionError=1) # TODO check reprojectionError makes big difference!
+        _, R, t, _ = cv2.solvePnPRansac(world_coords, keyframe_pts[i][j], K, dist, reprojectionError=1)
 
         if j == len(keyframe_pts[i]) // 2:
             R_half, t_half = R, t

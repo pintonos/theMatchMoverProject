@@ -3,6 +3,7 @@ from util import *
 
 MIN_MATCHES = 200
 
+
 def find_next_key_frame(idx1, idx2):
     """
     finds point matches that are preserved between idx1 and idx2
@@ -69,5 +70,37 @@ def find_next_key_frame(idx1, idx2):
         return keyframes, new_keyframe_pos
     else:
         keyframes.append(traced_matches)
-        print('no new keyframe found')
+        print('last keyframe found')
         return keyframes, None
+
+
+def get_all_keyframes(start_frame_idx, end_frame_idx):
+    keyframes, keyframe_id = find_next_key_frame(start_frame_idx, end_frame_idx)
+    keyframe_idx = [keyframe_id]
+    start_idx = [0]
+    while keyframe_id and keyframe_id < end_frame_idx:
+        if len(keyframes) > 1:
+            start_frame = keyframe_idx[-2]
+        else:
+            start_frame = len(keyframes[0][0]['coordinates']) // 2
+
+        tmp_kf, keyframe_id = find_next_key_frame(start_frame, end_frame_idx)
+        keyframes = keyframes + tmp_kf
+        keyframe_idx.append(keyframe_id)
+        start_idx.append(tmp_kf[0][0]['start_frame'])
+
+    start_idx.append(end_frame_idx)
+    return keyframes, start_idx
+
+
+def get_keyframe_pts(keyframes):
+    keyframe_pts = []
+    for k in keyframes:
+        pts_list = []
+        for i in range(len(k[0]['coordinates'])):
+            pts = []
+            for frame in k:
+                pts.append(frame['coordinates'][i])
+            pts_list.append(pts)
+        keyframe_pts.append(np.asarray(pts_list))
+    return keyframe_pts

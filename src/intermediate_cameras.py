@@ -30,6 +30,9 @@ R2, t2 = get_R_and_t(keyframe_pts[0][0], keyframe_pts[0][-1], K)
 axis = get_3d_axis(R2, t2)
 _, world_coords = get_3d_world_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pts[0][-1], dist, K)
 
+for i in range(start_frame):
+    _, img = reader.read()
+
 for i, keyframe in enumerate(keyframe_pts):
     print('keyframe', i)
     # get new keyframe by resectioning
@@ -49,7 +52,7 @@ for i, keyframe in enumerate(keyframe_pts):
     for j, frame in enumerate(keyframe_pts[i]):
         _, R, t, _ = cv2.solvePnPRansac(world_coords, keyframe_pts[i][j], K, dist, reprojectionError=1)
 
-        half_idx = start_idx[i+1]-start_idx[i]
+        half_idx = start_idx[i+1] - start_idx[i]
         if j == half_idx:
             R_half, t_half = R, t
 

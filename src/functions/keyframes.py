@@ -77,12 +77,12 @@ def find_next_key_frame(idx1, idx2):
 def get_all_keyframes(start_frame_idx, end_frame_idx):
     keyframes, keyframe_id = find_next_key_frame(start_frame_idx, end_frame_idx)
     keyframe_idx = [keyframe_id]
-    start_idx = [0]
+    start_idx = [start_frame_idx]
     while keyframe_id and keyframe_id < end_frame_idx:
         if len(keyframes) > 1:
             start_frame = keyframe_idx[-2]
         else:
-            start_frame = len(keyframes[0][0]['coordinates']) // 2
+            start_frame = start_frame_idx + len(keyframes[0][0]['coordinates']) // 2
 
         tmp_kf, keyframe_id = find_next_key_frame(start_frame, end_frame_idx)
         keyframes = keyframes + tmp_kf

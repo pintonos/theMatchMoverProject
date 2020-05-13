@@ -5,11 +5,12 @@ import os
 reader, writer = get_video_streams()
 
 start_frame = 0
-end_frame = 300  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
+end_frame = 100  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 start_idx_path = DATA_PATH + 'start_idx.npy'
 keyframe_pts_path = DATA_PATH + 'keyframe_pts.npy'
 
 # get keyframes
+
 if os.path.isfile(keyframe_pts_path) and os.path.isfile(start_idx_path):
     keyframe_pts = np.load(keyframe_pts_path, allow_pickle=True)
     start_idx = np.load(start_idx_path, allow_pickle=True)
@@ -42,18 +43,17 @@ for i, keyframe in enumerate(keyframe_pts):
         pts1, pts2 = cv2.correctMatches(F, pts1, pts2)
 
         _, world_coords = get_3d_world_points(R_half, t_half, R, t, pts1[0], pts2[0], dist, K)
-        _, R, t, _ = cv2.solvePnPRansac(world_coords, keyframe_pts[i][-1], K, dist, reprojectionError=5)
+        _, R, t, _ = cv2.solvePnPRansac(world_coords, keyframe_pts[i][-1], K, dist, reprojectionError=1)
 
     # fill between keyframes
     for j, frame in enumerate(keyframe_pts[i]):
         _, R, t, _ = cv2.solvePnPRansac(world_coords, keyframe_pts[i][j], K, dist, reprojectionError=1)
 
-        number_points = len(keyframe_pts[i]) // 2
-        if j == number_points:
+        half_idx = start_idx[i+1]-start_idx[i]
+        if j == half_idx:
             R_half, t_half = R, t
-            half_idx = number_points
 
-        if j < len(keyframe_pts[i]) // 2 or i == len(keyframe_pts)-1:
+        if j < half_idx or i == len(keyframe_pts)-1:
             points2d, _ = cv2.projectPoints(axis, R, t, K, dist)
 
             _, img = reader.read()

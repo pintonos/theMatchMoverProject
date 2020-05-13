@@ -156,7 +156,7 @@ def optimizedParams(params, n_cameras, n_points):
         R, t = revert_camera_build(c)
         cameras.append(Camera(R, t))
 
-    points3d = params[n_cameras * 9:].reshape((n_points, 3))
+    points3d = params[n_cameras * 9:].reshape((n_points, 1, 3))
 
     return cameras, points3d
 
@@ -190,6 +190,7 @@ def start_bundle_adjustment(cameras, points3d, points2d, verbose=False):
 
         plt.plot(res.fun)
         plt.show()
+        print(res.x)
 
     print("Optimization took {0:.0f} seconds".format(t1 - t0))
 
@@ -227,3 +228,5 @@ if __name__ == "__main__":
 
     plt.plot(res.fun)
     plt.show()
+
+    print(res.x)

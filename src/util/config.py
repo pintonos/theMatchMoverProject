@@ -47,6 +47,8 @@ REF_POINTS_10 = DATA_PATH + 'reference_10.csv'
 REF_POINTS_18 = DATA_PATH + 'reference_18.csv'
 REF_POINTS_34 = DATA_PATH + 'reference_34.csv'
 REF_POINTS_100 = DATA_PATH + 'reference_100.csv'
+REF_POINTS_117 = DATA_PATH + 'reference_117.csv'
+
 
 K, dist = None, None
 

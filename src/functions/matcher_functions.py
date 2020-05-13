@@ -26,6 +26,17 @@ def get_harris_corner(img):
     dst = np.uint8(dst)
     return dst
 
+def filter_matches_with_distance(pts1, pts2, matches, threshold_x=100, threshold_y=50):
+    filtered_pts1 = []
+    filtered_pts2 = []
+    filtered_matches = []
+    for i, pt in enumerate(pts1):
+        if pt[0] + threshold_x > pts2[i][0] > pt[0] - threshold_x and pt[1] + threshold_y > pts2[i][1] > pt[1] - threshold_y:
+            filtered_pts1.append(pt)
+            filtered_pts2.append(pts2[i])
+            filtered_matches.append(matches[i])
+
+    return filtered_pts1, filtered_pts2, filtered_matches
 
 def lowes_ratio_test(kp1, kp2, matches, threshold=0.7):
     """
@@ -163,6 +174,8 @@ def get_points(img1, img2, detector=Detector.ORB, filter=True, matcher=Matcher.B
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.001)
     pts1 = cv2.cornerSubPix(gray1, np.float32(pts1), (5, 5), (-1, -1), criteria)
     pts2 = cv2.cornerSubPix(gray2, np.float32(pts2), (5, 5), (-1, -1), criteria)
+
+    pts1, pts2, matches = filter_matches_with_distance(pts1, pts2, matches)
 
     if showMatches:
         matches = sorted(matches, key=lambda x: x.distance)

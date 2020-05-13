@@ -30,6 +30,7 @@ axis = get_3d_axis(R2, t2)
 _, world_coords = get_3d_world_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pts[0][-1], dist, K)
 
 for i, keyframe in enumerate(keyframe_pts):
+    print('keyframe', i)
     # get new keyframe by resectioning
     if i != 0:
         R_half, _ = cv2.Rodrigues(R_half)
@@ -37,7 +38,7 @@ for i, keyframe in enumerate(keyframe_pts):
 
         F = get_F(keyframe_pts[i][0], keyframe_pts[i][-1])
         pts1 = np.reshape(keyframe_pts[i][0], (1, len(keyframe_pts[i][0]), 2))
-        pts2 = np.reshape(keyframe_pts[i][start_idx[i+1]-start_idx[i]], (1, len(keyframe_pts[i][start_idx[i+1]-start_idx[i]]), 2))
+        pts2 = np.reshape(keyframe_pts[i][half_idx], (1, len(keyframe_pts[i][half_idx]), 2))
         pts1, pts2 = cv2.correctMatches(F, pts1, pts2)
 
         _, world_coords = get_3d_world_points(R_half, t_half, R, t, pts1[0], pts2[0], dist, K)
@@ -47,8 +48,10 @@ for i, keyframe in enumerate(keyframe_pts):
     for j, frame in enumerate(keyframe_pts[i]):
         _, R, t, _ = cv2.solvePnPRansac(world_coords, keyframe_pts[i][j], K, dist, reprojectionError=1)
 
-        if j == len(keyframe_pts[i]) // 2:
+        number_points = len(keyframe_pts[i]) // 2
+        if j == number_points:
             R_half, t_half = R, t
+            half_idx = number_points
 
         if j < len(keyframe_pts[i]) // 2 or i == len(keyframe_pts)-1:
             points2d, _ = cv2.projectPoints(axis, R, t, K, dist)
@@ -59,7 +62,7 @@ for i, keyframe in enumerate(keyframe_pts):
             writer.write(img)
 
             cv2.imshow('img', cv2.resize(img, DEMO_RESIZE))
-            cv2.waitKey(500)
+            cv2.waitKey(200)
 
 
 reader.release()

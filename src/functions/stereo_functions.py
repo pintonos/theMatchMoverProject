@@ -18,7 +18,7 @@ def invert(R, t):
 
 
 def get_F(pts1, pts2):
-    F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.RANSAC)  # TODO try different parameters
+    F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.RANSAC, 4, 0.999)  # TODO try different parameters
     F = F/np.linalg.norm(F)
     return F
 

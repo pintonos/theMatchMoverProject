@@ -27,7 +27,7 @@ print('keyframes at:', start_idx)
 R0, t0 = INIT_ORIENTATION, INIT_POSITION
 R2, t2 = get_R_and_t(keyframe_pts[0][0], keyframe_pts[0][-1], K)
 
-axis = get_3d_axis(R2, t2)
+axis = get_3d_axis(R2, t2, REF_POINTS_0, REF_POINTS_18)
 _, world_coords = get_3d_world_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pts[0][-1], dist, K)
 
 for i in range(start_frame):

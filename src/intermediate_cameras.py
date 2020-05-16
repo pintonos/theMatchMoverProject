@@ -4,13 +4,13 @@ import os
 
 
 def project_inliers(R, t, world_coords, inliers):
-    inlier_points3d = []
+    inlier_points_3d = []
     for inlier_idx in inliers:
-        inlier_points3d.append(world_coords[inlier_idx[0]])
-    inlier_points3d = np.asarray(inlier_points3d)
-    inlier_points_2d, _ = cv2.projectPoints(inlier_points3d, R, t, K, dist)
+        inlier_points_3d.append(world_coords[inlier_idx[0]])
+    inlier_points_3d = np.asarray(inlier_points_3d)
+    inlier_points_2d, _ = cv2.projectPoints(inlier_points_3d, R, t, K, dist)
 
-    return inlier_points3d, inlier_points_2d
+    return inlier_points_3d, inlier_points_2d
 
 
 def get_intermediate_cameras(keyframe_cameras, points_3d, keyframe_pts):
@@ -27,7 +27,7 @@ def get_intermediate_cameras(keyframe_cameras, points_3d, keyframe_pts):
 reader, writer = get_video_streams()
 
 start_frame = 0
-end_frame = int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
+end_frame = 150  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 start_idx_path = DATA_PATH + 'start_idx.npy'
 keyframe_pts_path = DATA_PATH + 'keyframe_pts.npy'
 
@@ -52,8 +52,9 @@ axis = get_3d_axis(R2, t2, REF_POINTS_0, REF_POINTS_18)
 world_coords = get_3d_world_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pts[0][-1], dist, K)
 
 keyframe_cameras = [Camera(R0, t0)]
-keyframe_world_points = [world_coords]
-keyframe_image_points = [keyframe_pts[0][0]]
+keyframe_world_points = [np.asarray(world_coords)]
+keyframe_image_points = [keyframe_pts[0][0].reshape(-1, 1, 2)]
+all_world_coords = [world_coords]
 for i, keyframe in enumerate(keyframe_pts):
     print('keyframe', i)
     # get new keyframe by resectioning
@@ -68,9 +69,11 @@ for i, keyframe in enumerate(keyframe_pts):
 
         world_coords = get_3d_world_points(R_half, t_half, R, t, pts1[0], pts2[0], dist, K)
         keyframe_cameras.append(Camera(R, t))
+        all_world_coords.append(world_coords)
 
-    half_idx = start_idx[i+1] - start_idx[i]
-    _, R_half, t_half, inliers_half = cv2.solvePnPRansac(world_coords, keyframe_pts[i][half_idx], K, dist, reprojectionError=5)
+    half_idx = start_idx[i + 1] - start_idx[i]
+    _, R_half, t_half, inliers_half = cv2.solvePnPRansac(world_coords, keyframe_pts[i][half_idx], K, dist,
+                                                         reprojectionError=5)
     _, R, t, inliers = cv2.solvePnPRansac(world_coords, keyframe_pts[i][-1], K, dist, reprojectionError=5)
 
     if inliers is None or inliers_half is None:
@@ -81,12 +84,11 @@ for i, keyframe in enumerate(keyframe_pts):
     keyframe_world_points.append(points_3d)
     keyframe_image_points.append(points_2d)
 
-
 # bundle adjustment
-# opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_world_points, keyframe_image_points)
+#opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_world_points, keyframe_image_points)
 
 # add intermediate cameras
-cameras = get_intermediate_cameras(keyframe_cameras, keyframe_world_points, keyframe_pts)
+cameras = get_intermediate_cameras(keyframe_cameras, all_world_coords, keyframe_pts)
 
 for i in range(len(cameras)):
     _, img = reader.read()

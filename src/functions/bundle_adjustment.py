@@ -1,53 +1,16 @@
-from __future__ import print_function
-import bz2
-import os
 from itertools import repeat
-from urllib import request
-
 import cv2
 import numpy as np
-import time
 from scipy.optimize import least_squares
 from scipy.sparse import lil_matrix
-import matplotlib.pyplot as plt
 
 from functions import *
 from util import *
 
-BASE_URL = "http://grail.cs.washington.edu/projects/bal/data/ladybug/"
-FILE_NAME = "problem-49-7776-pre.txt.bz2"
-URL = BASE_URL + FILE_NAME
-
-if not os.path.isfile(FILE_NAME):
-    request.urlretrieve(URL, FILE_NAME)
-
-
-def read_bal_data(file_name):
-    with bz2.open(file_name, "rt") as file:
-        n_cameras, n_points, n_observations = map(
-            int, file.readline().split())
-
-        camera_indices = np.empty(n_observations, dtype=int)
-        point_indices = np.empty(n_observations, dtype=int)
-        points_2d = np.empty((n_observations, 2))
-
-        for i in range(n_observations):
-            camera_index, point_index, x, y = file.readline().split()
-            camera_indices[i] = int(camera_index)
-            point_indices[i] = int(point_index)
-            points_2d[i] = [float(x), float(y)]
-
-        camera_params = np.empty(n_cameras * 9)
-        for i in range(n_cameras * 9):
-            camera_params[i] = float(file.readline())
-        camera_params = camera_params.reshape((n_cameras, -1))
-
-        points_3d = np.empty(n_points * 3)
-        for i in range(n_points * 3):
-            points_3d[i] = float(file.readline())
-        points_3d = points_3d.reshape((n_points, -1))
-
-    return camera_params, points_3d, camera_indices, point_indices, points_2d
+"""
+bundle adjustments, from:
+https://scipy-cookbook.readthedocs.io/items/bundle_adjustment.html
+"""
 
 
 def rotate(points, rot_vecs):
@@ -80,7 +43,7 @@ def project(points, camera_params):
     return points_proj
 
 
-def fun(params, n_cameras, n_points, camera_indices, point_indices, points_2d):
+def get_residuals(params, n_cameras, n_points, camera_indices, point_indices, points_2d):
     """Compute residuals.
 
     `params` contains camera parameters and 3-D coordinates.
@@ -127,26 +90,32 @@ def revert_camera_build(bundle_camera_matrix):
     return R, t
 
 
-def prepare_data(cameras, points3d, points2d):
+def prepare_data(cameras, frame_points_3d, frame_points_2d):
     camera_params = np.empty((0, 9))
     for c in cameras:
         R, _ = cv2.Rodrigues(c.R)
         camera = build_camera(R, c.t)
         camera_params = np.append(camera_params, [camera], axis=0)
+
     camera_indices = np.empty(0, dtype=int)
     point_indices = np.empty(0, dtype=int)
+
     points_2d = np.empty((0, 2))
-    for i, pts_2d in enumerate(points2d):
+    for i, pts_2d in enumerate(frame_points_2d):
         camera_indices = np.append(camera_indices, np.asarray(list(repeat(i, len(pts_2d)))), axis=0)
         point_indices = np.append(point_indices, np.asarray([i for i in range(len(pts_2d))]), axis=0)
         points_2d = np.vstack((points_2d, np.squeeze(pts_2d, axis=1)))
 
-    points_3d = np.squeeze(points3d, axis=1)
+    points_3d = []
+    for i, pts_3d in enumerate(frame_points_3d):
+        for pt in pts_3d:
+            points_3d.append(pt)
+    points_3d = np.asarray(points_3d)
 
     return camera_params, camera_indices, point_indices, points_3d, points_2d
 
 
-def optimizedParams(params, n_cameras, n_points):
+def optimized_params(params, n_cameras, n_points):
     """
     Retrieve camera parameters and 3-D coordinates.
     """
@@ -161,72 +130,19 @@ def optimizedParams(params, n_cameras, n_points):
     return cameras, points3d
 
 
-def start_bundle_adjustment(cameras, points3d, points2d, verbose=False):
+def start_bundle_adjustment(cameras, points3d, points2d):
+    print('start bundle adjustment ...')
     camera_params, camera_indices, point_indices, points_3d, points_2d = prepare_data(cameras, points3d, points2d)
 
     n_cameras = camera_params.shape[0]
     n_points = points_3d.shape[0]
-    n = 9 * n_cameras + 3 * n_points
-    m = 2 * points_2d.shape[0]
 
     x0 = np.hstack((camera_params.ravel(), points_3d.ravel()))
-    f0 = fun(x0, n_cameras, n_points, camera_indices, point_indices, points_2d)
 
     A = bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices)
-
-    t0 = time.time()
-    res = least_squares(fun, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-4, method='trf',
+    res = least_squares(get_residuals, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-5,
                         args=(n_cameras, n_points, camera_indices, point_indices, points_2d))
-    t1 = time.time()
 
-    if verbose:
-        print("n_cameras: {}".format(n_cameras))
-        print("n_points: {}".format(n_points))
-        print("Total number of parameters: {}".format(n))
-        print("Total number of residuals: {}".format(m))
-
-        plt.plot(f0)
-        plt.show()
-
-        plt.plot(res.fun)
-        plt.show()
-        print(res.x)
-
-    print("Optimization took {0:.0f} seconds".format(t1 - t0))
-
-    optimized_cameras, optimized_points_3d = optimizedParams(res.x, n_cameras, n_points)
+    optimized_cameras, optimized_points_3d = optimized_params(res.x, n_cameras, n_points)
 
     return optimized_cameras, optimized_points_3d
-
-
-if __name__ == "__main__":
-    camera_params, points_3d, camera_indices, point_indices, points_2d = read_bal_data(FILE_NAME)
-
-    n_cameras = camera_params.shape[0]
-    n_points = points_3d.shape[0]
-    n = 9 * n_cameras + 3 * n_points
-    m = 2 * points_2d.shape[0]
-    print("n_cameras: {}".format(n_cameras))
-    print("n_points: {}".format(n_points))
-    print("Total number of parameters: {}".format(n))
-    print("Total number of residuals: {}".format(m))
-
-    x0 = np.hstack((camera_params.ravel(), points_3d.ravel()))
-    print(x0.shape)
-    f0 = fun(x0, n_cameras, n_points, camera_indices, point_indices, points_2d)
-    plt.plot(f0)
-    plt.show()
-
-    A = bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices)
-
-    t0 = time.time()
-    res = least_squares(fun, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-4, method='trf',
-                        args=(n_cameras, n_points, camera_indices, point_indices, points_2d))
-    t1 = time.time()
-
-    print("Optimization took {0:.0f} seconds".format(t1 - t0))
-
-    plt.plot(res.fun)
-    plt.show()
-
-    print(res.x)

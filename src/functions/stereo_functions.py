@@ -18,7 +18,7 @@ def invert(R, t):
 
 
 def get_F(pts1, pts2):
-    F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.RANSAC, 4, 0.999)  # TODO try different parameters
+    F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.RANSAC, 4, 0.999)
     F = F/np.linalg.norm(F)
     return F
 
@@ -34,11 +34,6 @@ def get_E_from_F(pts1, pts2, K):
 
 def get_R_and_t(pts1, pts2, K, compute_with_f=False):
     # More explanation at https://stackoverflow.com/questions/33906111/how-do-i-estimate-positions-of-two-cameras-in-opencv
-
-    # Normalize for Essential Matrix calculation
-    # TODO make undistortPoints work
-    # pts_l_norm = cv2.undistortPoints(np.expand_dims(pts1, axis=1).astype(dtype=np.float32), cameraMatrix=K, distCoeffs=dist)
-    # pts_r_norm = cv2.undistortPoints(np.expand_dims(pts2, axis=1).astype(dtype=np.float32), cameraMatrix=K, distCoeffs=dist)
 
     E = None
     if compute_with_f:  # compute essential matrix via fundamental matrix
@@ -78,19 +73,10 @@ def get_3d_world_points(R1, t1, R2, t2, ref_pts1, ref_pts2, dist, K):
     P2 = np.c_[R2, t2]
     world_coords = cv2.triangulatePoints(P1, P2, pts_l_norm, pts_r_norm)
 
-    # sanity check
-    x2 = P2 @ world_coords
-    x2 = x2 / x2[2]
-    x2 = x2[:2]
-    # should be equal
-    #print(pts_r_norm[:4])
-    #print(x2.transpose()[:4])
-
     # from homogeneous to normal coordinates
     world_coords /= world_coords[3]
     world_coords = world_coords[:-1]
 
     world_coords = world_coords.transpose()
-    axis = world_coords[0:4]  # first 4 points are axis
 
-    return axis, world_coords
+    return world_coords

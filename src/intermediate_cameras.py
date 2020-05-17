@@ -36,10 +36,12 @@ def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, inliers):
     for i in range(len(keyframe_cameras)):
         cameras.append(keyframe_cameras[i])
         frame_range = len(keyframe_pts[i])
+        half_idx = start_idx[i + 1] - start_idx[i]
         for j in range(frame_range):
-            print(i, j, counter)
-            _, R, t, _ = cv2.solvePnPRansac(points_3d[i], filtered_points_2d[counter], K, dist, reprojectionError=10)
-            cameras.append(Camera(R, t))
+            if j < half_idx - 1:
+                _, R, t, _ = cv2.solvePnPRansac(points_3d[i], filtered_points_2d[counter], K, dist,
+                                                reprojectionError=10)
+                cameras.append(Camera(R, t))
             counter += 1
     return cameras
 
@@ -75,9 +77,9 @@ axis = get_3d_axis(R2, t2, REF_POINTS_0, REF_POINTS_18)
 world_coords = get_3d_world_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pts[0][-1], dist, K)
 
 keyframe_cameras = [Camera(R0, t0)]
-keyframe_world_points = [np.asarray(world_coords)]
-keyframe_image_points = [keyframe_pts[0][0].reshape(-1, 1, 2)]
-keyframe_inliers = [[[i] for i in range(len(world_coords))]]
+keyframe_world_points = []
+keyframe_image_points = []
+keyframe_inliers = []
 for i, keyframe in enumerate(keyframe_pts):
     print('keyframe:', i, "index:", start_idx[i])
     # get new keyframe by resectioning
@@ -107,15 +109,11 @@ for i, keyframe in enumerate(keyframe_pts):
     keyframe_image_points.append(points_2d)
     keyframe_inliers.append(inliers)
 
-    # append last camera
-    if i == len(keyframe_pts) - 1:
-        keyframe_cameras.append(Camera(R, t))
-
 # bundle adjustment
 opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_world_points, keyframe_image_points)
 
 # add intermediate cameras
-cameras = get_intermediate_cameras(opt_cameras, opt_points_3d, keyframe_pts, keyframe_inliers) # TODO
+cameras = get_intermediate_cameras(opt_cameras, opt_points_3d, keyframe_pts, keyframe_inliers)
 
 for i in range(len(cameras)):
     _, img = reader.read()

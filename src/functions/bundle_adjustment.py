@@ -115,7 +115,7 @@ def prepare_data(cameras, frame_points_3d, frame_points_2d):
     return camera_params, camera_indices, point_indices, points_3d, points_2d
 
 
-def optimized_params(params, n_cameras, n_points):
+def optimized_params(params, n_cameras, n_points_per_frame):
     """
     Retrieve camera parameters and 3-D coordinates.
     """
@@ -125,7 +125,12 @@ def optimized_params(params, n_cameras, n_points):
         R, t = revert_camera_build(c)
         cameras.append(Camera(R, t))
 
-    points3d = params[n_cameras * 9:].reshape((n_points, 1, 3))
+    points3d = []
+    range_counter = 0
+    for range in n_points_per_frame:
+        range_points = range * 3
+        points3d.append(params[n_cameras * 9 + range_counter:n_cameras * 9 + range_counter + range_points].reshape((range, 1, 3)))
+        range_counter += range_points
 
     return cameras, points3d
 
@@ -136,6 +141,7 @@ def start_bundle_adjustment(cameras, points3d, points2d):
 
     n_cameras = camera_params.shape[0]
     n_points = points_3d.shape[0]
+    n_points_per_frame = [points.shape[0] for points in points2d]
 
     x0 = np.hstack((camera_params.ravel(), points_3d.ravel()))
 
@@ -143,6 +149,6 @@ def start_bundle_adjustment(cameras, points3d, points2d):
     res = least_squares(get_residuals, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-5,
                         args=(n_cameras, n_points, camera_indices, point_indices, points_2d))
 
-    optimized_cameras, optimized_points_3d = optimized_params(res.x, n_cameras, n_points)
+    optimized_cameras, optimized_points_3d = optimized_params(res.x, n_cameras, n_points_per_frame)
 
     return optimized_cameras, optimized_points_3d

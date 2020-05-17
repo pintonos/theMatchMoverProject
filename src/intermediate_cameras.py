@@ -47,18 +47,21 @@ def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, inliers):
 reader, writer = get_video_streams()
 
 start_frame = 0
-end_frame = 150  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
+end_frame = 100  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
+keyframes_path = DATA_PATH + 'keyframes.npy'
 start_idx_path = DATA_PATH + 'start_idx.npy'
 keyframe_pts_path = DATA_PATH + 'keyframe_pts.npy'
 
 # get keyframes
-if os.path.isfile(keyframe_pts_path) and os.path.isfile(start_idx_path):
+if os.path.isfile(keyframe_pts_path) and os.path.isfile(start_idx_path) and os.path.isfile(keyframes_path):
+    keyframes = np.load(keyframes_path, allow_pickle=True)
     keyframe_pts = np.load(keyframe_pts_path, allow_pickle=True)
     start_idx = np.load(start_idx_path, allow_pickle=True)
 else:
     keyframes, start_idx = get_all_keyframes(start_frame, end_frame)
     keyframe_pts = get_keyframe_pts(keyframes)
     # save data
+    np.save(keyframes_path, keyframes)
     np.save(keyframe_pts_path, keyframe_pts)
     np.save(start_idx_path, start_idx)
 

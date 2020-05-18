@@ -60,7 +60,7 @@ def get_R_and_t(pts1, pts2, K, compute_with_f=False):
     return R, t
 
 
-def get_3d_world_points(R1, t1, R2, t2, ref_pts1, ref_pts2, dist, K):
+def triangulate_points(R1, t1, R2, t2, ref_pts1, ref_pts2, dist, K):
     # undistort ref points
     # second answer: https://stackoverflow.com/questions/16295551/how-to-correctly-use-cvtriangulatepoints/16299909
     pts_l_norm = cv2.undistortPoints(np.expand_dims(ref_pts1, axis=1).astype(dtype=np.float32), cameraMatrix=K,

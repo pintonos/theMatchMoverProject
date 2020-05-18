@@ -39,7 +39,7 @@ cv2.imshow('img_17', cv2.resize(img2, DEMO_RESIZE))
 '''
 
 # P1
-_, world_coords1 = get_3d_world_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pts[0][-1], dist, K)
+_, world_coords1 = triangulate_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pts[0][-1], dist, K)
 #_, R1, t1, _ = cv2.solvePnPRansac(world_coords1, keyframe_pts[0][-1], K, dist, reprojectionError=1)
 _, R1, t1 = cv2.solvePnP(world_coords1, keyframe_pts[0][-1], K, dist)
 print(R0)

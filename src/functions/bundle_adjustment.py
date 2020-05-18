@@ -93,7 +93,7 @@ def revert_camera_build(bundle_camera_matrix):
 def prepare_data(cameras, frame_points_3d, frame_points_2d):
     camera_params = np.empty((0, 9))
     for c in cameras:
-        R, _ = cv2.Rodrigues(c.R)
+        R, _ = cv2.Rodrigues(c.R_mat)
         camera = build_camera(R, c.t)
         camera_params = np.append(camera_params, [camera], axis=0)
 
@@ -146,7 +146,7 @@ def start_bundle_adjustment(cameras, points3d, points2d):
     x0 = np.hstack((camera_params.ravel(), points_3d.ravel()))
 
     A = bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices)
-    res = least_squares(get_residuals, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-5,
+    res = least_squares(get_residuals, x0, jac_sparsity=A, verbose=1, x_scale='jac', ftol=1e-5,
                         args=(n_cameras, n_points, camera_indices, point_indices, points_2d))
 
     optimized_cameras, optimized_points_3d = optimized_params(res.x, n_cameras, n_points_per_frame)

@@ -16,7 +16,7 @@ R1, t1 = INIT_ORIENTATION, INIT_POSITION
 R2, t2 = get_R_and_t(pts1, pts2, K)
 
 # get world points of axis
-world_coords_axis, _ = get_3d_world_points(R1, t1, R2, t2, pts1, pts2, dist, K)
+world_coords_axis, _ = triangulate_points(R1, t1, R2, t2, pts1, pts2, dist, K)
 print(world_coords_axis)
 
 # project points to image 1

@@ -68,9 +68,11 @@ class Matcher(Enum):
 class Camera:
     def __init__(self, R, t):
         if R.shape[1] == 1:
-            self.R, _ = cv2.Rodrigues(R)  # transform to rotation matrix
+            self.R_vec = R
+            self.R_mat, _ = cv2.Rodrigues(R)  # transform to rotation matrix
         else:
-            self.R = R
+            self.R_vec, _ = cv2.Rodrigues(R)
+            self.R_mat = R
 
         self.t = t
 

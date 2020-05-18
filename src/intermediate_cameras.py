@@ -12,6 +12,7 @@ def project_inliers(R, t, world_coords, inliers):
 
     return inlier_points_3d, inlier_points_2d
 
+
 def filter_points_2d(points_2d, inliers):
     filtered_points = []
 
@@ -29,21 +30,32 @@ def filter_points_2d(points_2d, inliers):
 
     return filtered_points
 
+
 def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, inliers):
-    cameras = []
+    print('get intermediate cameras ...')
+    all_cameras = []
     filtered_points_2d = filter_points_2d(points_2d, inliers)
     counter = 0
     for i in range(len(keyframe_cameras)):
-        cameras.append(keyframe_cameras[i])
+        all_cameras.append(keyframe_cameras[i])
         frame_range = len(keyframe_pts[i])
         half_idx = start_idx[i + 1] - start_idx[i]
         for j in range(frame_range):
             if j < half_idx - 1:
                 _, R, t, _ = cv2.solvePnPRansac(points_3d[i], filtered_points_2d[counter], K, dist,
                                                 reprojectionError=10)
-                cameras.append(Camera(R, t))
+                all_cameras.append(Camera(R, t))
             counter += 1
-    return cameras
+    return all_cameras
+
+
+def correct_matches(points, start_idx):
+    halfway_idx = start_idx[i] - start_idx[i - 1]
+    F = get_F(points[0], points[-1])
+    pts1 = np.reshape(points[0], (1, len(points[0]), 2))
+    pts2 = np.reshape(points[halfway_idx], (1, len(points[halfway_idx]), 2))
+    pts1, pts2 = cv2.correctMatches(F, pts1, pts2)
+    return pts1[0], pts2[0]
 
 
 reader, writer = get_video_streams()
@@ -67,47 +79,50 @@ else:
     np.save(keyframe_pts_path, keyframe_pts)
     np.save(start_idx_path, start_idx)
 
-print('keyframes at:', start_idx)
+print('found keyframes at positions:', start_idx)
 
-# get init cameras P0 and P2
+# get cameras P0 and P2
 R0, t0 = INIT_ORIENTATION, INIT_POSITION
 R2, t2 = get_R_and_t(keyframe_pts[0][0], keyframe_pts[0][-1], K)
 
 axis = get_3d_axis(R2, t2, REF_POINTS_0, REF_POINTS_18)
-world_coords = get_3d_world_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pts[0][-1], dist, K)
+world_coords = triangulate_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pts[0][-1], dist, K)
 
-keyframe_cameras = [Camera(R0, t0)]
-keyframe_world_points = []
-keyframe_image_points = []
-keyframe_inliers = []
-for i, keyframe in enumerate(keyframe_pts):
-    print('keyframe:', i, "index:", start_idx[i])
-    # get new keyframe by resectioning
-    if i != 0:
-        R_half, _ = cv2.Rodrigues(R_half)
-        R, _ = cv2.Rodrigues(R)
+# compute P1 (halfway between P0 and P2)
+halfway_idx = start_idx[1] - start_idx[0]
+_, R, t, inliers = cv2.solvePnPRansac(world_coords, keyframe_pts[0][halfway_idx], K, dist, confidence=0.999)
+points_3d, points_2d = project_inliers(R0, t0, world_coords, inliers)
 
-        F = get_F(keyframe_pts[i][0], keyframe_pts[i][-1])
-        pts1 = np.reshape(keyframe_pts[i][0], (1, len(keyframe_pts[i][0]), 2))
-        pts2 = np.reshape(keyframe_pts[i][half_idx], (1, len(keyframe_pts[i][half_idx]), 2))
-        pts1, pts2 = cv2.correctMatches(F, pts1, pts2)
+# initialize lists
+keyframe_cameras = [Camera(R0, t0), Camera(R, t)]
+keyframe_world_points = [points_3d]
+keyframe_image_points = [points_2d]
+keyframe_inliers = [inliers]
 
-        world_coords = get_3d_world_points(R_half, t_half, R, t, pts1[0], pts2[0], dist, K)
-        keyframe_cameras.append(Camera(R, t))
+# start resectioning
+print('get keyframe cameras ...')
+for i in range(1, len(keyframe_pts)):  # start iterating at camera P1
 
-    half_idx = start_idx[i + 1] - start_idx[i]
-    _, R_half, t_half, inliers_half = cv2.solvePnPRansac(world_coords, keyframe_pts[i][half_idx], K, dist,
-                                                         reprojectionError=5)
-    _, R, t, inliers = cv2.solvePnPRansac(world_coords, keyframe_pts[i][-1], K, dist, reprojectionError=5)
+    pts1, pts2 = correct_matches(keyframe_pts[i], start_idx)
 
-    if inliers is None or inliers_half is None:
-        print('no inliers found')
-        break
+    prev_cam = keyframe_cameras[i - 1]
+    curr_cam = keyframe_cameras[i]
 
-    points_3d, points_2d = project_inliers(R, t, world_coords, inliers)
+    # get next camera by resectioning form previous and current camera
+    points_3d = triangulate_points(prev_cam.R_mat, prev_cam.t, curr_cam.R_mat, curr_cam.t, pts1, pts2, dist, K)
+    _, R, t, inliers = cv2.solvePnPRansac(points_3d, keyframe_pts[i][-1], K, dist, confidence=0.999)
+
+    # filter points with inliers list
+    points_3d, points_2d = project_inliers(R, t, points_3d, inliers)
+
+    # append to lists
+    keyframe_cameras.append(Camera(R, t))
     keyframe_world_points.append(points_3d)
     keyframe_image_points.append(points_2d)
     keyframe_inliers.append(inliers)
+
+# remove last keyframe camera (needed because camera list is initialized with two elements)
+keyframe_cameras.pop()
 
 # bundle adjustment
 opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_world_points, keyframe_image_points)
@@ -115,12 +130,14 @@ opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_
 # add intermediate cameras
 cameras = get_intermediate_cameras(opt_cameras, opt_points_3d, keyframe_pts, keyframe_inliers)
 
+# save/show frames
 for i in range(len(cameras)):
     _, img = reader.read()
     img_opt = img.copy()
 
-    points_2d, _ = cv2.projectPoints(axis, cameras[i].R, cameras[i].t, K, dist)
+    points_2d, _ = cv2.projectPoints(axis, cameras[i].R_mat, cameras[i].t, K, dist)
     draw_axis(img, points_2d)
+    print('show frame:', i)
     cv2.imshow('normal', cv2.resize(img, DEMO_RESIZE))
     cv2.waitKey(300)
     writer.write(img)

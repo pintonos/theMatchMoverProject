@@ -42,12 +42,9 @@ VIDEO_OUT_STEREO_PATH = DATA_PATH + 'output_stereo.avi'
 # Intermediate files
 CAMERA_MATRIX = DATA_PATH + 'cmatrix.npy'
 CAMERA_DIST_COEFF = DATA_PATH + 'dist.npy'
-REF_POINTS_0 = DATA_PATH + 'reference_0.csv'
-REF_POINTS_10 = DATA_PATH + 'reference_10.csv'
-REF_POINTS_18 = DATA_PATH + 'reference_18.csv'
-REF_POINTS_34 = DATA_PATH + 'reference_34.csv'
-REF_POINTS_100 = DATA_PATH + 'reference_100.csv'
-REF_POINTS_117 = DATA_PATH + 'reference_117.csv'
+
+# template CSV file path
+REF_POINTS = DATA_PATH + 'reference_{frame}.csv'
 
 
 K, dist = None, None
@@ -75,12 +72,6 @@ class Camera:
             self.R_mat = R
 
         self.t = t
-
-    def get_camera_matrix(self):
-        return np.c_[self.R, self.t]
-
-    def __str__(self):
-        return str(np.c_[self.R, self.t])
 
 
 def get_video_streams():

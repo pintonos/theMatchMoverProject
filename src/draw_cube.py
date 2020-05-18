@@ -4,7 +4,6 @@ import cv2
 
 
 # get world points of axis
-axis = get_3d_axis()
 
 # vectors
 scale_factor_xy = 0.5

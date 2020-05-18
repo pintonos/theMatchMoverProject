@@ -9,7 +9,7 @@ MAX_FPS = 100
 SKIP_FPS = 30
 
 # Points for a 3D cube
-img_points_3d = get_3d_axis()
+img_points_3d = get_3d_axis(,
 
 video = cv2.VideoCapture(VIDEO_PATH)
 frames_total = int(video.get(cv2.CAP_PROP_FRAME_COUNT))

@@ -100,11 +100,15 @@ def prepare_data(cameras, frame_points_3d, frame_points_2d):
     camera_indices = np.empty(0, dtype=int)
     point_indices = np.empty(0, dtype=int)
 
-    points_2d = np.empty((0, 2))
     for i, pts_2d in enumerate(frame_points_2d):
         camera_indices = np.append(camera_indices, np.asarray(list(repeat(i, len(pts_2d)))), axis=0)
         point_indices = np.append(point_indices, np.asarray([i for i in range(len(pts_2d))]), axis=0)
-        points_2d = np.vstack((points_2d, np.squeeze(pts_2d, axis=1)))
+
+    points_2d = []
+    for i, pts_2d in enumerate(frame_points_2d):
+        for pt in pts_2d:
+            points_2d.append(pt)
+    points_2d = np.asarray(points_2d)
 
     points_3d = []
     for i, pts_3d in enumerate(frame_points_3d):

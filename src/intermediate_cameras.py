@@ -105,10 +105,10 @@ for i in range(1, len(keyframe_pts)):  # start iterating at camera P1
 keyframe_cameras.pop()
 
 # bundle adjustment
-# opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_world_points, keyframe_image_points)
+opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_world_points, keyframe_image_points)
 
 # add intermediate cameras
-cameras = get_intermediate_cameras(keyframe_cameras, keyframe_world_points, keyframe_image_points)
+cameras = get_intermediate_cameras(opt_cameras, opt_points_3d, keyframe_image_points)
 
 start, end = 18, 70
 axis = get_3d_axis(cameras[start], start, cameras[end], end)

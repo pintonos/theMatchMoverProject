@@ -1,3 +1,6 @@
+import functools
+import operator
+
 from util import *
 import pandas as pd
 from functions import *
@@ -36,6 +39,12 @@ def draw_points(img, pts, i_init=0):
         cv2.circle(img, (pt[0], pt[1]), 3, (255, 0, 0), -1)
         cv2.putText(img, str(i + i_init), (pt[0], pt[1]), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 1)
 
+def draw_keyframe_inliers(start_idx, inliers_2d):
+    for i, keyframe_id in enumerate(start_idx[1:]):
+        img = get_frame(keyframe_id)
+        draw_points(img, functools.reduce(operator.iconcat, inliers_2d[i].astype(int).tolist(), []))
+        cv2.imshow('normal', cv2.resize(img, DEMO_RESIZE))
+        cv2.waitKey(0)
 
 def get_P(R, t, K):
     Rt = np.c_[R, t]

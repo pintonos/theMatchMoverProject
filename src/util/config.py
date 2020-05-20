@@ -87,6 +87,14 @@ def get_video_streams():
     return video, out
 
 
+def get_frame(frame_index):
+    reader = cv2.VideoCapture(VIDEO_PATH)
+    img = None
+    for i in range(frame_index + 1):
+        _, img = reader.read()
+    return img
+
+
 def load_interm(camera_matrix, camera_dist_coeff):
     global K
     global dist

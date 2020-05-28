@@ -56,7 +56,7 @@ def find_next_key_frame(idx1, idx2):
 
             traced_matches = list(filter(lambda m: m['to'] is not None, traced_matches))
 
-            if len(traced_matches) <= MIN_MATCHES:
+            if len(traced_matches) <= MIN_MATCHES or curr_idx == idx2 - 1:
                 # new keyframe
                 new_keyframe_pos = curr_idx + 1
                 print('found keyframe at pos ' + str(new_keyframe_pos))

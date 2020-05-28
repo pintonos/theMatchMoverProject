@@ -15,14 +15,13 @@ def get_inlier_points(points_3d, points_2d, inliers):
     return np.asarray(filtered_3d), np.asarray(filtered_2d)
 
 
-def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d):
+def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, frame_ranges):
     print('get intermediate cameras ...')
     all_cameras = []
-    for i in range(len(keyframe_cameras)):
+    for i in range(len(keyframe_cameras)-1):
         all_cameras.append(keyframe_cameras[i])
-        frame_range = len(keyframe_pts[i])
         half_idx = start_idx[i + 1] - start_idx[i]
-        for j in range(frame_range):
+        for j in range(frame_ranges[i]):
             if j < half_idx - 1:
                 _, R, t, _ = cv2.solvePnPRansac(points_3d[i], points_2d[i], K, dist, reprojectionError=10)
                 all_cameras.append(Camera(R, t))
@@ -75,8 +74,8 @@ points_3d, points_2d = get_inlier_points(points_3d_0, keyframe_pts[0][halfway_id
 
 # initialize lists
 keyframe_cameras = [Camera(R0, t0), Camera(R, t)]
-keyframe_world_points = [points_3d]
-keyframe_image_points = [points_2d]
+keyframe_world_points = [points_3d_0, points_3d]
+keyframe_image_points = [keyframe_pts[0][0], points_2d]
 
 # start resectioning
 print('get keyframe cameras ...')
@@ -101,14 +100,12 @@ for i in range(1, len(keyframe_pts)):  # start iterating at camera P1
     keyframe_world_points.append(points_3d)
     keyframe_image_points.append(points_2d)
 
-# remove last keyframe camera (needed because camera list is initialized with two elements)
-keyframe_cameras.pop()
-
 # bundle adjustment
 opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_world_points, keyframe_image_points)
 
 # add intermediate cameras
-cameras = get_intermediate_cameras(opt_cameras, opt_points_3d, keyframe_image_points)
+frame_ranges = [len(keyframe_pts[i]) for i in range(len(keyframe_cameras)-1)]
+cameras = get_intermediate_cameras(opt_cameras, opt_points_3d, keyframe_image_points, frame_ranges)
 
 start, end = 18, 70
 axis = get_3d_axis(cameras[start], start, cameras[end], end)

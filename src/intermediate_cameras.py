@@ -15,16 +15,15 @@ def get_inlier_points(points_3d, points_2d, inliers):
     return np.asarray(filtered_3d), np.asarray(filtered_2d)
 
 
-def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d):
+def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, frame_ranges):
     print('get intermediate cameras ...')
     all_cameras = []
-    for i in range(len(keyframe_cameras)):
+    for i in range(len(keyframe_cameras)-1):
         all_cameras.append(keyframe_cameras[i])
-        frame_range = len(keyframe_pts[i])
         half_idx = start_idx[i + 1] - start_idx[i]
-        for j in range(frame_range):
+        for j in range(frame_ranges[i]):
             if j < half_idx - 1:
-                _, R, t, _ = cv2.solvePnPRansac(points_3d[i], points_2d[i], K, dist, reprojectionError=20)
+                _, R, t, _ = cv2.solvePnPRansac(points_3d[i], points_2d[i], K, dist, reprojectionError=1.0)
                 all_cameras.append(Camera(R, t))
     return all_cameras
 
@@ -73,7 +72,7 @@ points_3d_0 = triangulate_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pt
 
 # compute P1 (halfway between P0 and P2)
 halfway_idx = start_idx[1] - start_idx[0]
-_, R, t, inliers = cv2.solvePnPRansac(points_3d_0, keyframe_pts[0][halfway_idx], K, dist, reprojectionError=1)
+_, R, t, inliers = cv2.solvePnPRansac(points_3d_0, keyframe_pts[0][halfway_idx], K, dist, reprojectionError=1.0)
 points_3d, points_2d = get_inlier_points(points_3d_0, keyframe_pts[0][halfway_idx], inliers)
 
 # initialize lists
@@ -94,7 +93,7 @@ for i in range(1, len(keyframe_pts)):  # start iterating at camera P1
 
     # get next camera by resectioning form previous and current camera
     points_3d = triangulate_points(prev_cam.R_mat, prev_cam.t, curr_cam.R_mat, curr_cam.t, pts1, pts2, dist, K)
-    _, R, t, inliers = cv2.solvePnPRansac(points_3d, keyframe_pts[i][-1], K, dist, confidence=0.99)
+    _, R, t, inliers = cv2.solvePnPRansac(points_3d, keyframe_pts[i][-1], K, dist, reprojectionError=1.0)
 
     # filter points with inliers list
     points_3d, points_2d = get_inlier_points(points_3d, keyframe_pts[i][-1], inliers)
@@ -106,18 +105,18 @@ for i in range(1, len(keyframe_pts)):  # start iterating at camera P1
 
 # bundle adjustment
 # opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_world_points, keyframe_image_points)
+opt_cameras = keyframe_cameras
+opt_points_3d = keyframe_world_points
 
 # add intermediate cameras
-cameras = get_intermediate_cameras(keyframe_cameras, keyframe_world_points, keyframe_image_points)
+frame_ranges = [len(keyframe_pts[i]) for i in range(len(keyframe_cameras)-1)]
+cameras = get_intermediate_cameras(opt_cameras, opt_points_3d, keyframe_image_points, frame_ranges)
 
-start, end = 18, 70
+start, end = 0, 34
 axis = get_3d_axis(cameras[start], start, cameras[end], end)
 # save/show frames
 for i in range(len(cameras)):
     _, img = reader.read()
-
-    if i not in start_idx:
-        continue
 
     points_2d, _ = cv2.projectPoints(axis, cameras[i].R_mat, cameras[i].t, K, dist)
     draw_axis(img, points_2d)

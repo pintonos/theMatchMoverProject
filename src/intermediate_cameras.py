@@ -34,10 +34,13 @@ def correct_matches(points, start_idx):
     halfway_idx = start_idx[i] - start_idx[i - 1]
     if halfway_idx >= len(points):
         return None, None
-    F = get_F(points[0], points[-1])
+
+    F, _ = get_F(points[0], points[-1])
+
     pts1 = np.reshape(points[0], (1, len(points[0]), 2))
     pts2 = np.reshape(points[halfway_idx], (1, len(points[halfway_idx]), 2))
     pts1, pts2 = cv2.correctMatches(F, pts1, pts2)
+
     return pts1[0], pts2[0]
 
 
@@ -57,7 +60,7 @@ def get_3d_points_for_consecutive_frames(points_3d, prev_cam, curr_cam, points_2
 reader, writer = get_video_streams()
 
 start_frame = 0
-end_frame = 70  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
+end_frame = 160  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 keyframes_path = DATA_PATH + 'keyframes.npy'
 start_idx_path = DATA_PATH + 'start_idx.npy'
 keyframe_pts_path = DATA_PATH + 'keyframe_pts.npy'

@@ -20,34 +20,43 @@ def invert(R, t):
 def get_F(pts1, pts2):
     F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.RANSAC, 4, 0.999)
     F = F/np.linalg.norm(F)
-    return F
+    return F, mask
 
 
 def get_E_from_F(pts1, pts2, K):
     # Get fundamental Matrix
-    F = get_F(pts1, pts2)
+    F, mask = get_F(pts1, pts2)
 
     # Compute E from F
     E = np.dot(np.dot(np.transpose(K), F), K)
-    return E
+    return E, mask
+
+
+def filter_pts(pts1, pts2, mask):
+    pts1_in = [pt for (pt, m) in zip(pts1, mask) if m[0] != 0]
+    pts2_in = [pt for (pt, m) in zip(pts2, mask) if m[0] != 0]
+    pts1 = np.reshape(pts1_in, (1, len(pts1_in), 2))
+    pts2 = np.reshape(pts2_in, (1, len(pts2_in), 2))
+    return pts1, pts2
 
 
 def get_R_and_t(pts1, pts2, K, compute_with_f=False):
     # More explanation at https://stackoverflow.com/questions/33906111/how-do-i-estimate-positions-of-two-cameras-in-opencv
 
-    E = None
+    E = mask = None
     if compute_with_f:  # compute essential matrix via fundamental matrix
-        E = get_E_from_F(pts1, pts2, K)
+        E, mask = get_E_from_F(pts1, pts2, K)
     else:  # find essential matrix directly
-        E, _ = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=0.1, cameraMatrix=K)
+        E, mask = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=0.1, cameraMatrix=K)
 
     # sanity check for E
     if not np.isclose(np.linalg.det(E), 0.0, atol=1.e-3):
         raise Exception('det(E) != 0, instead it is:', np.linalg.det(E))
 
+    # filter outliers
+    pts1, pts2 = filter_pts(pts1, pts2, mask)
+
     # refine mapping
-    pts1 = np.reshape(pts1, (1, len(pts1), 2))
-    pts2 = np.reshape(pts2, (1, len(pts2), 2))
     pts1, pts2 = cv2.correctMatches(E, pts1, pts2)
 
     # Recover relative camera rotation and translation from E and the corresponding points

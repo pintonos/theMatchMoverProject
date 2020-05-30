@@ -25,7 +25,7 @@ def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, frame_range
         half_idx = start_idx[i + 1] - start_idx[i]
         for j in range(frame_ranges[i]):
             if j < half_idx - 1:
-                _, R, t, _ = cv2.solvePnPRansac(points_3d[i][j], points_2d[i][j], K, dist, reprojectionError=1.0)
+                _, R, t, _ = cv2.solvePnPRansac(points_3d[i][j], points_2d[i][j], K, dist, reprojectionError=2.0)
                 all_cameras.append(Camera(R, t))
     return all_cameras
 
@@ -88,17 +88,16 @@ points_3d_0 = triangulate_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pt
 # compute P1 (halfway between P0 and P2)
 halfway_idx = start_idx[1] - start_idx[0]
 _, R, t, inliers = cv2.solvePnPRansac(points_3d_0, keyframe_pts[0][halfway_idx], K, dist, reprojectionError=1.0)
-points_3d, points_2d = get_inlier_points(points_3d_0, keyframe_pts[0][halfway_idx:], inliers)
+points_3d, points_2d = get_inlier_points(points_3d_0, keyframe_pts[0][:halfway_idx], inliers)
 
 P0 = Camera(R0, t0)
 P1 = Camera(R, t)
-points_3d_0 = get_3d_points_for_consecutive_frames(points_3d_0, P0, Camera(R2, t2), keyframe_pts[0][:halfway_idx])
 points_3d = get_3d_points_for_consecutive_frames(points_3d, P0, P1, points_2d)
 
 # initialize lists
 keyframe_cameras = [P0, P1]
-keyframe_world_points = [points_3d_0, points_3d]
-keyframe_image_points = [keyframe_pts[0][:halfway_idx], points_2d]
+keyframe_world_points = [points_3d]
+keyframe_image_points = [points_2d]
 
 # start resectioning
 print('get keyframe cameras ...')
@@ -113,7 +112,7 @@ for i in range(1, len(keyframe_pts)):  # start iterating at camera P1
 
     # get next camera by resectioning form previous and current camera
     points_3d = triangulate_points(prev_cam.R_mat, prev_cam.t, curr_cam.R_mat, curr_cam.t, pts1, pts2, dist, K)
-    _, R, t, inliers = cv2.solvePnPRansac(points_3d, keyframe_pts[i][-1], K, dist, reprojectionError=1.0)
+    _, R, t, inliers = cv2.solvePnPRansac(points_3d, keyframe_pts[i][-1], K, dist, reprojectionError=5.0)
 
     # filter points with inliers list
     points_3d, points_2d = get_inlier_points(points_3d, keyframe_pts[i], inliers)

@@ -60,7 +60,7 @@ def get_3d_points_for_consecutive_frames(points_3d, prev_cam, curr_cam, points_2
 reader, writer = get_video_streams()
 
 start_frame = 0
-end_frame = 160  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
+end_frame = 100  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 keyframes_path = DATA_PATH + 'keyframes.npy'
 start_idx_path = DATA_PATH + 'start_idx.npy'
 keyframe_pts_path = DATA_PATH + 'keyframe_pts.npy'
@@ -124,7 +124,7 @@ for i in range(1, len(keyframe_pts)):  # start iterating at camera P1
     keyframe_image_points.append(points_2d)
 
 # bundle adjustment
-# opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_world_points, keyframe_image_points)
+opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_world_points, keyframe_image_points)
 opt_cameras = keyframe_cameras
 opt_points_3d = keyframe_world_points
 

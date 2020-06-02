@@ -138,21 +138,24 @@ def prepare_data(cameras, frame_points_3d, frame_points_2d):
     camera_indices = np.empty(0, dtype=int)
     point_indices = np.empty(0, dtype=int)
 
+    points_2d = np.empty((0, 2))
+    pt_id_counter = 0
     for i, pts_2d in enumerate(frame_points_2d):
-        camera_indices = np.append(camera_indices, np.asarray(list(repeat(i, len(pts_2d)))), axis=0)
-        point_indices = np.append(point_indices, np.asarray([i for i in range(len(pts_2d))]), axis=0)
+        camera_indices = np.append(camera_indices, np.asarray(list(repeat(i, len(pts_2d[0])))), axis=0)
+        camera_indices = np.append(camera_indices, np.asarray(list(repeat(i+1, len(pts_2d[-1])))), axis=0)
 
-    points_2d = []
-    for i, pts_2d in enumerate(frame_points_2d):
-        for pt in pts_2d:
-            points_2d.append(pt)
-    points_2d = np.asarray(points_2d)
+        point_indices = np.append(point_indices, np.asarray([i for i in range(pt_id_counter, pt_id_counter + len(pts_2d[0]))]), axis=0)
+        point_indices = np.append(point_indices, np.asarray([i for i in range(pt_id_counter, pt_id_counter + len(pts_2d[-1]))]), axis=0)
 
-    points_3d = []
-    for i, pts_3d in enumerate(frame_points_3d):
-        for pt in pts_3d:
-            points_3d.append(pt)
-    points_3d = np.asarray(points_3d)
+        pt_id_counter = pt_id_counter + len(pts_2d[0]) + 100
+
+        points_2d = np.vstack((points_2d, np.squeeze(pts_2d[0])))
+        points_2d = np.vstack((points_2d, np.squeeze(pts_2d[-1])))
+
+    points_3d = np.empty((0, 3))
+    for pts_3d in frame_points_3d:
+        points_3d = np.vstack((points_3d, np.squeeze(pts_3d[0])))
+        points_3d = np.vstack((points_3d, np.squeeze(pts_3d[-1])))
 
     return camera_params, camera_indices, point_indices, points_3d, points_2d
 
@@ -183,13 +186,31 @@ def start_bundle_adjustment(cameras, points3d, points2d):
 
     n_cameras = camera_params.shape[0]
     n_points = points_3d.shape[0]
-    n_points_per_frame = [points.shape[0] for points in points2d]
+    n_points_per_frame = [points.shape[1] for points in points2d]
+
+    n = 9 * n_cameras + 3 * n_points
+    m = 2 * points_2d.shape[0]
+    print("n_cameras: {}".format(n_cameras))
+    print("n_points: {}".format(n_points))
+    print("Total number of parameters: {}".format(n))
+    print("Total number of residuals: {}".format(m))
 
     x0 = np.hstack((camera_params.ravel(), points_3d.ravel()))
 
+    f0 = get_residuals(x0, n_cameras, n_points, camera_indices, point_indices, points_2d)
+    plt.plot(f0)
+    plt.show()
+
     A = bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices)
-    res = least_squares(get_residuals, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-5,
+    t0 = time.time()
+    res = least_squares(get_residuals, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-5, method='trf', # TODO old version with -5 and no method?
                         args=(n_cameras, n_points, camera_indices, point_indices, points_2d))
+    t1 = time.time()
+
+    print("Optimization took {0:.0f} seconds".format(t1 - t0))
+
+    plt.plot(res.fun)
+    plt.show()
 
     optimized_cameras, optimized_points_3d = optimized_params(res.x, n_cameras, n_points_per_frame)
 
@@ -210,6 +231,7 @@ if __name__ == "__main__":
 
     x0 = np.hstack((camera_params.ravel(), points_3d.ravel()))
     print(x0.shape)
+
     f0 = get_residuals(x0, n_cameras, n_points, camera_indices, point_indices, points_2d)
     plt.plot(f0)
     plt.show()

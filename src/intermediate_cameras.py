@@ -125,8 +125,8 @@ for i in range(1, len(keyframe_pts)):  # start iterating at camera P1
 
 # bundle adjustment
 opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_world_points, keyframe_image_points)
-opt_cameras = keyframe_cameras
-opt_points_3d = keyframe_world_points
+#opt_cameras = keyframe_cameras
+#opt_points_3d = keyframe_world_points
 
 # add intermediate cameras
 frame_ranges = [len(keyframe_pts[i]) for i in range(len(keyframe_cameras)-1)]

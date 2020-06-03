@@ -128,14 +128,29 @@ opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_
 #opt_cameras = keyframe_cameras
 #opt_points_3d = keyframe_world_points
 
+'''
 # add intermediate cameras
 frame_ranges = [len(keyframe_pts[i]) for i in range(len(keyframe_cameras)-1)]
-cameras = get_intermediate_cameras(opt_cameras, opt_points_3d, keyframe_image_points, frame_ranges)
+cameras = get_intermediate_cameras(opt_cameras, opt_points_3d, keyframe_image_points, frame_ranges)'''
 
-start, end = 0, 34
-axis = get_3d_axis(cameras[start], start, cameras[end], end)
+start, end = 0, 18
+axis = get_3d_axis(opt_cameras[0], start, opt_cameras[1], end)  # TODO check if keyframe or opt cameras
+
+img1 = cv2.imread(DATA_PATH + 'img_0.jpg')
+img2 = cv2.imread(DATA_PATH + 'img_34.jpg')
+
+points_2d, _ = cv2.projectPoints(axis, opt_cameras[0].R_mat, opt_cameras[0].t, K, dist)
+draw_axis(img1, points_2d)
+cv2.imshow('normal', cv2.resize(img1, DEMO_RESIZE))
+cv2.waitKey(0)
+
+points_2d, _ = cv2.projectPoints(axis, opt_cameras[2].R_mat, opt_cameras[2].t, K, dist)
+draw_axis(img2, points_2d)
+cv2.imshow('normal', cv2.resize(img2, DEMO_RESIZE))
+cv2.waitKey(0)
+
 # save/show frames
-for i in range(len(cameras)):
+'''for i in range(len(cameras)):
     _, img = reader.read()
 
     points_2d, _ = cv2.projectPoints(axis, cameras[i].R_mat, cameras[i].t, K, dist)
@@ -143,7 +158,7 @@ for i in range(len(cameras)):
     print('show frame:', i)
     cv2.imshow('normal', cv2.resize(img, DEMO_RESIZE))
     cv2.waitKey(0)
-    writer.write(img)
+    writer.write(img)'''
 
 reader.release()
 writer.release()

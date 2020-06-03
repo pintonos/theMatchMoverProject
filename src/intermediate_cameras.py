@@ -60,7 +60,7 @@ def get_3d_points_for_consecutive_frames(points_3d, prev_cam, curr_cam, points_2
 reader, writer = get_video_streams()
 
 start_frame = 0
-end_frame = 100  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
+end_frame = 30  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 keyframes_path = DATA_PATH + 'keyframes.npy'
 start_idx_path = DATA_PATH + 'start_idx.npy'
 keyframe_pts_path = DATA_PATH + 'keyframe_pts.npy'
@@ -123,34 +123,19 @@ for i in range(1, len(keyframe_pts)):  # start iterating at camera P1
     keyframe_world_points.append(points_3d)
     keyframe_image_points.append(points_2d)
 
-# bundle adjustment
-opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_world_points, keyframe_image_points)
-#opt_cameras = keyframe_cameras
-#opt_points_3d = keyframe_world_points
-
-'''
 # add intermediate cameras
 frame_ranges = [len(keyframe_pts[i]) for i in range(len(keyframe_cameras)-1)]
-cameras = get_intermediate_cameras(opt_cameras, opt_points_3d, keyframe_image_points, frame_ranges)'''
+cameras = get_intermediate_cameras(keyframe_cameras, keyframe_world_points, keyframe_image_points, frame_ranges)
+
+# bundle adjustment
+opt_cameras, opt_points_3d = start_bundle_adjustment(cameras, keyframe_world_points, keyframe_image_points)
 
 start, end = 0, 18
-axis = get_3d_axis(opt_cameras[0], start, opt_cameras[1], end)  # TODO check if keyframe or opt cameras
-
-img1 = cv2.imread(DATA_PATH + 'img_0.jpg')
-img2 = cv2.imread(DATA_PATH + 'img_34.jpg')
-
-points_2d, _ = cv2.projectPoints(axis, opt_cameras[0].R_mat, opt_cameras[0].t, K, dist)
-draw_axis(img1, points_2d)
-cv2.imshow('normal', cv2.resize(img1, DEMO_RESIZE))
-cv2.waitKey(0)
-
-points_2d, _ = cv2.projectPoints(axis, opt_cameras[2].R_mat, opt_cameras[2].t, K, dist)
-draw_axis(img2, points_2d)
-cv2.imshow('normal', cv2.resize(img2, DEMO_RESIZE))
-cv2.waitKey(0)
+axis = get_3d_axis(cameras[start], start, cameras[end], end)
 
 # save/show frames
-'''for i in range(len(cameras)):
+cameras = opt_cameras
+for i in range(len(cameras)):
     _, img = reader.read()
 
     points_2d, _ = cv2.projectPoints(axis, cameras[i].R_mat, cameras[i].t, K, dist)
@@ -158,7 +143,7 @@ cv2.waitKey(0)
     print('show frame:', i)
     cv2.imshow('normal', cv2.resize(img, DEMO_RESIZE))
     cv2.waitKey(0)
-    writer.write(img)'''
+    writer.write(img)
 
 reader.release()
 writer.release()

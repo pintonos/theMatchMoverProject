@@ -141,21 +141,17 @@ def prepare_data(cameras, frame_points_3d, frame_points_2d):
     points_2d = np.empty((0, 2))
     pt_id_counter = 0
     for i, pts_2d in enumerate(frame_points_2d):
-        camera_indices = np.append(camera_indices, np.asarray(list(repeat(i, len(pts_2d[0])))), axis=0)
-        camera_indices = np.append(camera_indices, np.asarray(list(repeat(i+1, len(pts_2d[-1])))), axis=0)
-
-        point_indices = np.append(point_indices, np.asarray([i for i in range(pt_id_counter, pt_id_counter + len(pts_2d[0]))]), axis=0)
-        point_indices = np.append(point_indices, np.asarray([i for i in range(pt_id_counter, pt_id_counter + len(pts_2d[-1]))]), axis=0)
+        for j in range(pts_2d.shape[0]):
+            camera_indices = np.append(camera_indices, np.asarray(list(repeat(i + j, len(pts_2d[0])))), axis=0)
+            point_indices = np.append(point_indices, np.asarray([i for i in range(pt_id_counter, pt_id_counter + len(pts_2d[0]))]), axis=0)
+            points_2d = np.vstack((points_2d, np.squeeze(pts_2d[j])))
 
         pt_id_counter = pt_id_counter + len(pts_2d[0]) + 100
 
-        points_2d = np.vstack((points_2d, np.squeeze(pts_2d[0])))
-        points_2d = np.vstack((points_2d, np.squeeze(pts_2d[-1])))
-
     points_3d = np.empty((0, 3))
     for pts_3d in frame_points_3d:
-        points_3d = np.vstack((points_3d, np.squeeze(pts_3d[0])))
-        points_3d = np.vstack((points_3d, np.squeeze(pts_3d[-1])))
+        for j in range(pts_3d.shape[0]):
+            points_3d = np.vstack((points_3d, np.squeeze(pts_3d[j])))
 
     return camera_params, camera_indices, point_indices, points_3d, points_2d
 
@@ -186,7 +182,7 @@ def start_bundle_adjustment(cameras, points3d, points2d):
 
     n_cameras = camera_params.shape[0]
     n_points = points_3d.shape[0]
-    n_points_per_frame = [points.shape[1] for points in points2d]
+    n_points_per_frame = [point.shape[0] for points in points2d for point in points]
 
     n = 9 * n_cameras + 3 * n_points
     m = 2 * points_2d.shape[0]
@@ -203,7 +199,7 @@ def start_bundle_adjustment(cameras, points3d, points2d):
 
     A = bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices)
     t0 = time.time()
-    res = least_squares(get_residuals, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-5, method='trf', # TODO old version with -5 and no method?
+    res = least_squares(get_residuals, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1, method='trf',
                         args=(n_cameras, n_points, camera_indices, point_indices, points_2d))
     t1 = time.time()
 

@@ -128,32 +128,42 @@ def revert_camera_build(bundle_camera_matrix):
     return R, t
 
 
-def prepare_data(cameras, frame_points_3d, frame_points_2d):
+def prepare_data(cameras, frame_points_3d, frame_points_2d, keyframe_idx):
     camera_params = np.empty((0, 9))
     for c in cameras:
         R, _ = cv2.Rodrigues(c.R_mat)
         camera = build_camera(R, c.t)
         camera_params = np.append(camera_params, [camera], axis=0)
 
-    camera_indices = np.empty(0, dtype=int)
-    point_indices = np.empty(0, dtype=int)
-
-    points_2d = np.empty((0, 2))
+    camera_indices = []
+    point_indices = []
+    last_shape = frame_points_2d[0].shape
+    i = 0
+    camera_id = 0
     pt_id_counter = 0
-    for i, pts_2d in enumerate(frame_points_2d):
-        for j in range(pts_2d.shape[0]):
-            camera_indices = np.append(camera_indices, np.asarray(list(repeat(i + j, len(pts_2d[0])))), axis=0)
-            point_indices = np.append(point_indices, np.asarray([i for i in range(pt_id_counter, pt_id_counter + len(pts_2d[0]))]), axis=0)
-            points_2d = np.vstack((points_2d, np.squeeze(pts_2d[j])))
+    points_2d = np.empty((0, 2))
 
-        pt_id_counter = pt_id_counter + len(pts_2d[0]) + 100
+    for pts_2d in frame_points_2d:
+        if last_shape == pts_2d.shape:
+            i += 1
+        else:
+            last_shape = pts_2d.shape
+            camera_id += 1
+            pt_id_counter = pt_id_counter + len(pts_2d) + 100
+            i = 0
+
+        for j in range(pts_2d.shape[0]):
+            points_2d = np.vstack((points_2d, pts_2d[j]))
+
+        camera_indices += [camera_id for _ in range(len(pts_2d))]
+        point_indices += [i for i in range(pt_id_counter, pt_id_counter + len(pts_2d))]
 
     points_3d = np.empty((0, 3))
     for pts_3d in frame_points_3d:
         for j in range(pts_3d.shape[0]):
-            points_3d = np.vstack((points_3d, np.squeeze(pts_3d[j])))
+            points_3d = np.vstack((points_3d, pts_3d[j]))
 
-    return camera_params, camera_indices, point_indices, points_3d, points_2d
+    return camera_params, np.asarray(camera_indices), np.asarray(point_indices), points_3d, points_2d
 
 
 def optimized_params(params, n_cameras, n_points_per_frame):
@@ -176,13 +186,39 @@ def optimized_params(params, n_cameras, n_points_per_frame):
     return cameras, points3d
 
 
-def start_bundle_adjustment(cameras, points3d, points2d):
+def filter_outliers(cameras, points_2d, points_3d, threshold=0.8):
+    in_cameras = []
+    in_points_2d = []
+    in_points_3d = []
+
+    for i in range(0, len(cameras)):
+
+        reprojected, _ = cv2.projectPoints(np.asarray(points_3d[i]), cameras[i].R_vec, cameras[i].t, K, dist)
+        reprojected = np.reshape(reprojected, (len(reprojected), 2))
+
+        close_arr = np.isclose(points_2d[i], reprojected, atol=5)
+        close_arr = np.reshape(close_arr, (len(close_arr)*2))
+
+        if close_arr.sum() > threshold * len(close_arr):
+            in_cameras.append(cameras[i])
+            in_points_2d.append(points_2d[i])
+            in_points_3d.append(points_3d[i])
+        else:
+            in_cameras.append(in_cameras[i-1])
+            in_points_2d.append(in_points_2d[i-1])
+            in_points_3d.append(in_points_3d[i-1])
+
+    return in_cameras, in_points_3d, in_points_2d
+
+
+def start_bundle_adjustment(cameras, points3d, points2d, keyframe_idx):
     print('start bundle adjustment ...')
-    camera_params, camera_indices, point_indices, points_3d, points_2d = prepare_data(cameras, points3d, points2d)
+    cameras, points3d, points2d = filter_outliers(cameras, points2d, points3d)
+    camera_params, camera_indices, point_indices, points_3d, points_2d = prepare_data(cameras, points3d, points2d, keyframe_idx)
 
     n_cameras = camera_params.shape[0]
     n_points = points_3d.shape[0]
-    n_points_per_frame = [point.shape[0] for points in points2d for point in points]
+    n_points_per_frame = [point.shape[0] for point in points2d]
 
     n = 9 * n_cameras + 3 * n_points
     m = 2 * points_2d.shape[0]
@@ -199,7 +235,7 @@ def start_bundle_adjustment(cameras, points3d, points2d):
 
     A = bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices)
     t0 = time.time()
-    res = least_squares(get_residuals, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1, method='trf',
+    res = least_squares(get_residuals, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-2, method='trf',
                         args=(n_cameras, n_points, camera_indices, point_indices, points_2d))
     t1 = time.time()
 

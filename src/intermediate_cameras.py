@@ -20,14 +20,20 @@ def get_inlier_points(points_3d, points_2d, inliers):
 def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, frame_ranges):
     print('get intermediate cameras ...')
     all_cameras = []
+    all_3d_points = []
+    all_2d_points = []
     for i in range(len(keyframe_cameras)-1):
         all_cameras.append(keyframe_cameras[i])
+        all_3d_points.append(points_3d[i][0])
+        all_2d_points.append(points_2d[i][0])
         half_idx = start_idx[i + 1] - start_idx[i]
-        for j in range(frame_ranges[i]):
-            if j < half_idx - 1:
+        for j in range(1, frame_ranges[i]):
+            if j < half_idx:
                 _, R, t, _ = cv2.solvePnPRansac(points_3d[i][j], points_2d[i][j], K, dist, reprojectionError=2.0)
                 all_cameras.append(Camera(R, t))
-    return all_cameras
+                all_3d_points.append(points_3d[i][j])
+                all_2d_points.append(points_2d[i][j])
+    return all_cameras, all_3d_points, all_2d_points
 
 
 def correct_matches(points, start_idx):
@@ -60,7 +66,7 @@ def get_3d_points_for_consecutive_frames(points_3d, prev_cam, curr_cam, points_2
 reader, writer = get_video_streams()
 
 start_frame = 0
-end_frame = 30  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
+end_frame = 50  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 keyframes_path = DATA_PATH + 'keyframes.npy'
 start_idx_path = DATA_PATH + 'start_idx.npy'
 keyframe_pts_path = DATA_PATH + 'keyframe_pts.npy'
@@ -125,12 +131,12 @@ for i in range(1, len(keyframe_pts)):  # start iterating at camera P1
 
 # add intermediate cameras
 frame_ranges = [len(keyframe_pts[i]) for i in range(len(keyframe_cameras)-1)]
-cameras = get_intermediate_cameras(keyframe_cameras, keyframe_world_points, keyframe_image_points, frame_ranges)
+cameras, points_3d, points_2d = get_intermediate_cameras(keyframe_cameras, keyframe_world_points, keyframe_image_points, frame_ranges)
 
 # bundle adjustment
-opt_cameras, opt_points_3d = start_bundle_adjustment(cameras, keyframe_world_points, keyframe_image_points)
+opt_cameras, opt_points_3d = start_bundle_adjustment(cameras, points_3d, points_2d, start_idx)
 
-start, end = 0, 18
+start, end = 0, 34
 axis = get_3d_axis(cameras[start], start, cameras[end], end)
 
 # save/show frames

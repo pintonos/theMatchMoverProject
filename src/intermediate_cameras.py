@@ -17,6 +17,18 @@ def get_inlier_points(points_3d, points_2d, inliers):
     return np.asarray(filtered_3d), filtered_2d
 
 
+def get_inlier_points_simple(points_3d, points_2d, inliers):
+    filtered_3d = []
+    filtered_2d = []
+
+    for i in range(len(inliers)):
+        in_index = inliers[i][0]
+        filtered_2d.append(points_2d[in_index])
+        filtered_3d.append(points_3d[in_index])
+
+    return np.asarray(filtered_3d), np.asarray(filtered_2d)
+
+
 def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, frame_ranges):
     print('get intermediate cameras ...')
     all_cameras = []
@@ -29,10 +41,11 @@ def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, frame_range
         half_idx = start_idx[i + 1] - start_idx[i]
         for j in range(1, frame_ranges[i]):
             if j < half_idx:
-                _, R, t, _ = cv2.solvePnPRansac(points_3d[i][j], points_2d[i][j], K, dist, reprojectionError=2.0)
+                _, R, t, inliers = cv2.solvePnPRansac(points_3d[i][j], points_2d[i][j], K, dist, reprojectionError=2.0)
+                frame_in_3d, frame_in_2d = get_inlier_points_simple(points_3d[i][j], points_2d[i][j], inliers)
                 all_cameras.append(Camera(R, t))
-                all_3d_points.append(points_3d[i][j])
-                all_2d_points.append(points_2d[i][j])
+                all_3d_points.append(frame_in_3d)
+                all_2d_points.append(frame_in_2d)
     return all_cameras, all_3d_points, all_2d_points
 
 

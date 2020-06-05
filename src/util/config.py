@@ -33,7 +33,7 @@ DATA_PATH = '../resources/data/'
 CALIB_VIDEO_PATH = DATA_PATH + 'visual-geometry-calibration.MTS'
 
 # Path to input video
-VIDEO_PATH = DATA_PATH + 'visual-geometry-video2_1.MTS'
+VIDEO_PATH = DATA_PATH + 'visual-geometry-video3.MTS'
 
 # Path to output video
 VIDEO_OUT_PATH = DATA_PATH + 'output.avi'

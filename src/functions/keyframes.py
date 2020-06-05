@@ -1,7 +1,7 @@
 from functions import *
 from util import *
 
-MIN_MATCHES = 200
+MIN_MATCHES = 300
 
 
 def find_next_key_frame(idx1, idx2):
@@ -35,7 +35,7 @@ def find_next_key_frame(idx1, idx2):
             continue
 
         # trace
-        match_points_1, match_points_2, matches = get_points(prev_frame, frame, detector=Detector.ORB)
+        match_points_1, match_points_2, matches = get_points(prev_frame, frame, detector=Detector.SURF)
 
         if traced_matches is None:
             traced_matches = [{

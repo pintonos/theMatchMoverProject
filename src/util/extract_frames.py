@@ -8,8 +8,8 @@ Frames are saved in DATA_PATH
 video = cv2.VideoCapture('../' + VIDEO_PATH)
 frames_total = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 
-frame_1 = 0
-frame_2 = 34
+frame_1 = 14
+frame_2 = 30
 
 count = 0
 success = True

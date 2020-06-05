@@ -136,27 +136,25 @@ def prepare_data(cameras, frame_points_3d, frame_points_2d, keyframe_idx):
         camera_params = np.append(camera_params, [camera], axis=0)
 
     camera_indices = []
-    point_indices = []  # TODO check this (bal example)
-    last_shape = frame_points_2d[0].shape
-    i = 0
-    camera_id = 0
-    pt_id_counter = 0
+    point_indices = []
     points_2d = np.empty((0, 2))
 
-    for pts_2d in frame_points_2d:
-        if last_shape == pts_2d.shape:  # comparison on shape is not safe
-            i += 1
-        else:
-            last_shape = pts_2d.shape
+    camera_id = 0
+    pt_id_counter = 0
+    last_id = 0
+    for keyframe_id in keyframe_idx[1:]:
+        pts_2d = frame_points_2d[0]
+        for i in range(last_id, keyframe_id):
+            pts_2d = frame_points_2d[i]
+            for j in range(pts_2d.shape[0]):
+                points_2d = np.vstack((points_2d, pts_2d[j]))
+
+            camera_indices += [camera_id for _ in range(len(pts_2d))]
+            point_indices += [i for i in range(pt_id_counter, pt_id_counter + len(pts_2d))]
+
             camera_id += 1
-            pt_id_counter = pt_id_counter + len(pts_2d)
-            i = 0
-
-        for j in range(pts_2d.shape[0]):
-            points_2d = np.vstack((points_2d, pts_2d[j]))
-
-        camera_indices += [camera_id for _ in range(len(pts_2d))]
-        point_indices += [i for i in range(pt_id_counter, pt_id_counter + len(pts_2d))]
+        last_id = keyframe_id
+        pt_id_counter = pt_id_counter + len(pts_2d)
 
     points_3d = np.empty((0, 3))
     for pts_3d in frame_points_3d:
@@ -196,7 +194,7 @@ def filter_outliers(cameras, points_2d, points_3d):
         reprojected, _ = cv2.projectPoints(np.asarray(points_3d[i]), cameras[i].R_vec, cameras[i].t, K, dist)
         reprojected = np.reshape(reprojected, (len(reprojected), 2))
 
-        close_arr = np.isclose(points_2d[i], reprojected, atol=5)
+        close_arr = np.isclose(points_2d[i], reprojected, atol=2)
 
         frame_in_pts_2d = []
         frame_in_pts_3d = []
@@ -213,7 +211,7 @@ def filter_outliers(cameras, points_2d, points_3d):
 
 def start_bundle_adjustment(cameras, points3d, points2d, keyframe_idx):
     print('start bundle adjustment ...')
-    points3d, points2d = filter_outliers(cameras, points2d, points3d)
+    #points3d, points2d = filter_outliers(cameras, points2d, points3d)
     camera_params, camera_indices, point_indices, points_3d, points_2d = prepare_data(cameras, points3d, points2d, keyframe_idx)
 
     n_cameras = camera_params.shape[0]

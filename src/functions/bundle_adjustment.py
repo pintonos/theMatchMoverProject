@@ -154,7 +154,7 @@ def prepare_data(cameras, frame_points_3d, frame_points_2d, keyframe_idx):
 
             camera_id += 1
         last_id = keyframe_id
-        pt_id_counter = pt_id_counter + len(pts_2d)
+        #pt_id_counter = pt_id_counter + len(pts_2d)
 
     points_3d = np.empty((0, 3))
     for pts_3d in frame_points_3d:
@@ -184,7 +184,7 @@ def optimized_params(params, n_cameras, n_points_per_frame):
     return cameras, points3d
 
 
-# TODO adjust threshold and atol values
+# TODO adjust threshold and atol values AND track corresponding points in other cameras (or will fuck up point indices)!
 def filter_outliers(cameras, points_2d, points_3d):
     in_points_2d = []
     in_points_3d = []
@@ -194,7 +194,7 @@ def filter_outliers(cameras, points_2d, points_3d):
         reprojected, _ = cv2.projectPoints(np.asarray(points_3d[i]), cameras[i].R_vec, cameras[i].t, K, dist)
         reprojected = np.reshape(reprojected, (len(reprojected), 2))
 
-        close_arr = np.isclose(points_2d[i], reprojected, atol=2)
+        close_arr = np.isclose(points_2d[i], reprojected, atol=0.5)
 
         frame_in_pts_2d = []
         frame_in_pts_3d = []

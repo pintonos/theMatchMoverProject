@@ -142,31 +142,39 @@ for i in range(1, len(keyframe_pts)):  # start iterating at camera P1
     keyframe_world_points.append(points_3d)
     keyframe_image_points.append(points_2d)
 
+'''
 # add intermediate cameras
 frame_ranges = [len(keyframe_pts[i]) for i in range(len(keyframe_cameras)-1)]
 cameras, points_3d, points_2d = get_intermediate_cameras(keyframe_cameras, keyframe_world_points, keyframe_image_points, frame_ranges)
 
 # bundle adjustment
-#opt_cameras, opt_points_3d = start_bundle_adjustment(cameras, points_3d, points_2d, start_idx)
-#cameras = opt_cameras
+opt_cameras, opt_points_3d = [], []
+for i, idx in enumerate(start_idx[1:]):
+    last_idx = start_idx[i]
+    opt_cameras_tmp, opt_points_3d_tmp = start_bundle_adjustment(cameras[last_idx:idx], points_3d[last_idx:idx], points_2d[last_idx:idx], [0, idx-last_idx])
+    opt_cameras = opt_cameras + opt_cameras_tmp
+    opt_points_3d = opt_points_3d + opt_points_3d_tmp
+
+cameras = opt_cameras
 
 #cameras = keyframe_cameras
-start, end = 0, 14
+start, end = 0, 7
 axis = get_3d_axis(cameras[start], start, cameras[end], end)
 
-#cameras, points_3d, points_2d = cameras[1:], points_3d[1:], points_2d[1:]
+#cameras, points_3d, points_2d = cameras[1:], points_3d[1:], points_2d[1:]'''
 
 # save/show frames
-for i in range(len(cameras)):
+'''for i in range(len(cameras)):
     _, img = reader.read()
     points_2d, _ = cv2.projectPoints(axis, cameras[i].R_mat, cameras[i].t, K, dist)
     draw_axis(img, points_2d)
     print('show frame:', i)
     cv2.imshow('normal', cv2.resize(img, DEMO_RESIZE))
     cv2.waitKey(0)
-    writer.write(img)
+    writer.write(img)'''
 
-'''
+cameras = keyframe_cameras
+axis = get_3d_axis(cameras[0], 0, cameras[5], 69)
 for i, c in enumerate(cameras):
     img = get_frame(start_idx[i])
     points_2d, _ = cv2.projectPoints(axis, c.R_mat, c.t, K, dist)
@@ -174,7 +182,7 @@ for i, c in enumerate(cameras):
     #draw_points(img, functools.reduce(operator.iconcat, keyframe_image_points[i].astype(int).tolist(), []))
     print('show frame:', start_idx[i])
     cv2.imshow('normal', cv2.resize(img, DEMO_RESIZE))
-    cv2.waitKey(0)'''
+    cv2.waitKey(0)
 
 reader.release()
 writer.release()

@@ -23,6 +23,7 @@ URL = BASE_URL + FILE_NAME
 if not os.path.isfile(FILE_NAME):
     urllib.request.urlretrieve(URL, FILE_NAME)
 
+
 def read_bal_data(file_name):
     with bz2.open(file_name, "rt") as file:
         n_cameras, n_points, n_observations = map(
@@ -123,9 +124,20 @@ def build_camera(R, t):
 
 
 def revert_camera_build(bundle_camera_matrix):
-    R = np.asarray(bundle_camera_matrix[0:3]).T.reshape(-1,1)
-    t = np.asarray(bundle_camera_matrix[3:6]).T.reshape(-1,1)
+    R = np.asarray(bundle_camera_matrix[0:3]).T.reshape(-1, 1)
+    t = np.asarray(bundle_camera_matrix[3:6]).T.reshape(-1, 1)
     return R, t
+
+
+def get_close_matchpoints(match_points1, match_points2, threshold_x=5, threshold_y=5):
+    close_idx1 = []
+    close_idx2 = []
+    for i, pt in enumerate(match_points1):
+        for j, pt2 in enumerate(match_points2):
+            if pt[0] + threshold_x > pt2[0] > pt[0] - threshold_x and pt[1] + threshold_y > pt2[1] > pt[1] - threshold_y:
+                close_idx1.append(i)
+                close_idx2.append(j)
+    return close_idx1, close_idx2
 
 
 def prepare_data(cameras, frame_points_3d, frame_points_2d, keyframe_idx):
@@ -138,28 +150,29 @@ def prepare_data(cameras, frame_points_3d, frame_points_2d, keyframe_idx):
     camera_indices = []
     point_indices = []
     points_2d = np.empty((0, 2))
+    points_3d = np.empty((0, 3))
 
     camera_id = 0
     pt_id_counter = 0
-    last_id = 0
-    for keyframe_id in keyframe_idx[1:]:
-        pts_2d = frame_points_2d[0]
-        for i in range(last_id, keyframe_id):
-            pts_2d = frame_points_2d[i]
-            for j in range(pts_2d.shape[0]):
-                points_2d = np.vstack((points_2d, pts_2d[j]))
+    close_idx2 = []
+    for k, pts_2d in enumerate(frame_points_2d):
+        pts_3d = frame_points_3d[k]
+        if k in keyframe_idx[1:]:
+            pt_id_counter = pt_id_counter + len(pts_2d)
 
-            camera_indices += [camera_id for _ in range(len(pts_2d))]
-            point_indices += [i for i in range(pt_id_counter, pt_id_counter + len(pts_2d))]
+        #close_idx1, close_idx2 = get_close_matchpoints(frame_points_2d[k - 1], frame_points_2d[k])
+        #close_pts = frame_points_2d[k - 1][close_idx1]
 
-            camera_id += 1
-        last_id = keyframe_id
-        #pt_id_counter = pt_id_counter + len(pts_2d)
+        for j in range(pts_2d.shape[0]):
+            points_2d = np.vstack((points_2d, pts_2d[j]))
 
-    points_3d = np.empty((0, 3))
-    for pts_3d in frame_points_3d:
         for j in range(pts_3d.shape[0]):
             points_3d = np.vstack((points_3d, pts_3d[j]))
+
+        camera_indices += [camera_id for _ in range(len(pts_2d))]
+        point_indices += [i for i in range(pt_id_counter, pt_id_counter + len(pts_2d))]
+
+        camera_id += 1
 
     return camera_params, np.asarray(camera_indices), np.asarray(point_indices), points_3d, points_2d
 
@@ -178,7 +191,8 @@ def optimized_params(params, n_cameras, n_points_per_frame):
     range_counter = 0
     for range in n_points_per_frame:
         range_points = range * 3
-        points3d.append(params[n_cameras * 9 + range_counter:n_cameras * 9 + range_counter + range_points].reshape((range, 1, 3)))
+        points3d.append(
+            params[n_cameras * 9 + range_counter:n_cameras * 9 + range_counter + range_points].reshape((range, 1, 3)))
         range_counter += range_points
 
     return cameras, points3d
@@ -211,8 +225,9 @@ def filter_outliers(cameras, points_2d, points_3d):
 
 def start_bundle_adjustment(cameras, points3d, points2d, keyframe_idx):
     print('start bundle adjustment ...')
-    #points3d, points2d = filter_outliers(cameras, points2d, points3d)
-    camera_params, camera_indices, point_indices, points_3d, points_2d = prepare_data(cameras, points3d, points2d, keyframe_idx)
+    # points3d, points2d = filter_outliers(cameras, points2d, points3d)
+    camera_params, camera_indices, point_indices, points_3d, points_2d = prepare_data(cameras, points3d, points2d,
+                                                                                      keyframe_idx)
 
     n_cameras = camera_params.shape[0]
     n_points = points_3d.shape[0]

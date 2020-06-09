@@ -173,8 +173,8 @@ for i, idx in enumerate(start_idx[1:]):
 '''
 
 # global bundle adjustment
-#opt_cameras, opt_points_3d = start_bundle_adjustment(cameras, points_3d, points_2d, start_idx)
-#cameras = opt_cameras
+opt_cameras, opt_points_3d = start_bundle_adjustment(cameras, points_3d, points_2d, start_idx)
+cameras = opt_cameras
 
 #cameras = keyframe_cameras
 start, end = 0, 30

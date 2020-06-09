@@ -154,19 +154,30 @@ def prepare_data(cameras, frame_points_3d, frame_points_2d, keyframe_idx):
 
     camera_id = 0
     pt_id_counter = 0
+    close_idx1 = []
     close_idx2 = []
+    keyframe_counter = 0
     for k, pts_2d in enumerate(frame_points_2d):
+        keyframe_id = keyframe_idx[keyframe_counter]
         pts_3d = frame_points_3d[k]
+
         if k in keyframe_idx[1:]:
             pt_id_counter = pt_id_counter + len(pts_2d)
+            keyframe_counter += 1
 
-        #close_idx1, close_idx2 = get_close_matchpoints(frame_points_2d[k - 1], frame_points_2d[k])
-        #close_pts = frame_points_2d[k - 1][close_idx1]
+        #if k in keyframe_idx:
+            #close_idx1, close_idx2 = get_close_matchpoints(frame_points_2d[keyframe_id-1], frame_points_2d[keyframe_id])
 
         for j in range(pts_2d.shape[0]):
+            #if j in close_idx1 and k < len(frame_points_2d):
+                #points_2d = np.vstack((points_2d, pts_2d[j]))
+
             points_2d = np.vstack((points_2d, pts_2d[j]))
 
         for j in range(pts_3d.shape[0]):
+            #if j in close_idx1:
+                #points_3d = np.vstack((points_3d, frame_points_3d[k+keyframe_id]))
+
             points_3d = np.vstack((points_3d, pts_3d[j]))
 
         camera_indices += [camera_id for _ in range(len(pts_2d))]
@@ -198,34 +209,43 @@ def optimized_params(params, n_cameras, n_points_per_frame):
     return cameras, points3d
 
 
-# TODO adjust threshold and atol values AND track corresponding points in other cameras (or will fuck up point indices)!
-def filter_outliers(cameras, points_2d, points_3d):
+def filter_outliers(cameras, points_2d, points_3d, keyframe_idx):
     in_points_2d = []
     in_points_3d = []
 
+    all_indices = []
+    indices = [i for i in range(1000)]
     for i in range(0, len(cameras)):
-
         reprojected, _ = cv2.projectPoints(np.asarray(points_3d[i]), cameras[i].R_vec, cameras[i].t, K, dist)
         reprojected = np.reshape(reprojected, (len(reprojected), 2))
 
-        close_arr = np.isclose(points_2d[i], reprojected, atol=0.5)
+        close_arr = np.isclose(points_2d[i], reprojected, atol=50.0)
 
-        frame_in_pts_2d = []
-        frame_in_pts_3d = []
+        current_indices = []
         for j in range(0, len(close_arr)):
             if close_arr[j][0] and close_arr[j][1]:
-                frame_in_pts_2d.append(points_2d[i][j])
-                frame_in_pts_3d.append(points_3d[i][j])
+                current_indices.append(j)
 
-        in_points_2d.append(np.asarray(frame_in_pts_2d))
-        in_points_3d.append(np.asarray(frame_in_pts_3d))
+        indices = np.intersect1d(indices, current_indices)
+
+        if i+1 in keyframe_idx[1:]:
+            all_indices.append(indices)
+            indices = [i for i in range(1000)]
+
+    index = 0
+    for i in range(0, len(cameras)):
+        if i in keyframe_idx[1:]:
+            index += 1
+
+        in_points_2d.append(np.asarray(points_2d[i][all_indices[index]]))
+        in_points_3d.append(np.asarray(points_3d[i][all_indices[index]]))
 
     return in_points_3d, in_points_2d
 
 
 def start_bundle_adjustment(cameras, points3d, points2d, keyframe_idx):
     print('start bundle adjustment ...')
-    # points3d, points2d = filter_outliers(cameras, points2d, points3d)
+    #points3d, points2d = filter_outliers(cameras, points2d, points3d, keyframe_idx)
     camera_params, camera_indices, point_indices, points_3d, points_2d = prepare_data(cameras, points3d, points2d,
                                                                                       keyframe_idx)
 
@@ -248,7 +268,7 @@ def start_bundle_adjustment(cameras, points3d, points2d, keyframe_idx):
 
     A = bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices)
     t0 = time.time()
-    res = least_squares(get_residuals, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-4, method='trf',
+    res = least_squares(get_residuals, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-5, method='trf',
                         args=(n_cameras, n_points, camera_indices, point_indices, points_2d))
     t1 = time.time()
 

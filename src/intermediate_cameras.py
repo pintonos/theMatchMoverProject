@@ -173,8 +173,8 @@ for i, idx in enumerate(start_idx[1:]):
 '''
 
 # global bundle adjustment
-opt_cameras, opt_points_3d = start_bundle_adjustment(cameras, points_3d, points_2d, start_idx)
-cameras = opt_cameras
+#opt_cameras, opt_points_3d = start_bundle_adjustment(cameras, points_3d, points_2d, start_idx)
+#cameras = opt_cameras
 
 #cameras = keyframe_cameras
 start, end = 0, 30
@@ -183,8 +183,8 @@ axis = get_3d_axis(cameras[start], start, cameras[end], end)
 # save/show frames
 for i in range(len(cameras)):
     _, img = reader.read()
-    points_2d, _ = cv2.projectPoints(axis, cameras[i].R_mat, cameras[i].t, K, dist)
-    draw_axis(img, points_2d)
+    points_2d = get_cube_points_from_axis_points(cameras[i], axis)
+    draw_cube(img, points_2d)
     print('show frame:', i)
     cv2.imshow('normal', cv2.resize(img, DEMO_RESIZE))
     cv2.waitKey(0)

@@ -4,6 +4,7 @@ import cv2
 
 
 # get world points of axis
+axis = get_3d_axis()
 
 # vectors
 scale_factor_xy = 0.5
@@ -47,4 +48,3 @@ cv2.imshow('cube', img)
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
-

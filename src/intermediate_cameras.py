@@ -29,7 +29,7 @@ def get_inlier_points_simple(points_3d, points_2d, inliers):
     return np.asarray(filtered_3d), np.asarray(filtered_2d)
 
 
-def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, frame_ranges):
+def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, frame_ranges, start_idx):
     print('get intermediate cameras ...')
     all_cameras = []
     all_3d_points = []
@@ -92,25 +92,29 @@ def get_3d_points_for_consecutive_frames(points_3d, prev_cam, curr_cam, points_2
 reader, writer = get_video_streams()
 
 start_frame = 0
-end_frame = 60  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
+end_frame = 13  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 keyframes_path = DATA_PATH + 'keyframes.npy'
 start_idx_path = DATA_PATH + 'start_idx.npy'
 keyframe_pts_path = DATA_PATH + 'keyframe_pts.npy'
 
 # get keyframes
-if os.path.isfile(keyframe_pts_path) and os.path.isfile(start_idx_path) and os.path.isfile(keyframes_path):
-    keyframes = np.load(keyframes_path, allow_pickle=True)
-    keyframe_pts = np.load(keyframe_pts_path, allow_pickle=True)
-    start_idx = np.load(start_idx_path, allow_pickle=True)
-else:
-    keyframes, start_idx = get_all_keyframes(start_frame, end_frame)
-    keyframe_pts = get_keyframe_pts(keyframes)
-    # save data
-    np.save(keyframes_path, keyframes)
-    np.save(keyframe_pts_path, keyframe_pts)
-    np.save(start_idx_path, start_idx)
+tracing = trace_points(start_frame, end_frame)
+keyframe_idx = find_keyframes(tracing)
+keyframe_pts = get_keyframe_pts(tracing, keyframe_idx)
 
-print('found keyframes at positions:', start_idx)
+# if os.path.isfile(keyframe_pts_path) and os.path.isfile(start_idx_path) and os.path.isfile(keyframes_path):
+#     keyframes = np.load(keyframes_path, allow_pickle=True)
+#     keyframe_pts = np.load(keyframe_pts_path, allow_pickle=True)
+#     keyframe_idx = np.load(start_idx_path, allow_pickle=True)
+# else:
+#     keyframes, keyframe_idx = get_all_keyframes(start_frame, end_frame)
+#     keyframe_pts = get_keyframe_pts(keyframes)
+#     save data
+#     np.save(keyframes_path, keyframes)
+#     np.save(keyframe_pts_path, keyframe_pts)
+#     np.save(start_idx_path, keyframe_idx)
+
+print('found keyframes at positions:', keyframe_idx)
 
 # get cameras P0 and P2
 R0, t0 = INIT_ORIENTATION, INIT_POSITION
@@ -118,7 +122,7 @@ R2, t2 = get_R_and_t(keyframe_pts[0][0], keyframe_pts[0][-1], K)
 points_3d_0 = triangulate_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pts[0][-1], dist, K)
 
 # compute P1 (halfway between P0 and P2)
-halfway_idx = start_idx[1] - start_idx[0]
+halfway_idx = keyframe_idx[1] - keyframe_idx[0]
 _, R, t, inliers = cv2.solvePnPRansac(points_3d_0, keyframe_pts[0][halfway_idx], K, dist, reprojectionError=1.0)
 points_3d, points_2d = get_inlier_points(points_3d_0, keyframe_pts[0][:halfway_idx], inliers)
 
@@ -135,7 +139,7 @@ keyframe_image_points = [points_2d]
 print('get keyframe cameras ...')
 for i in range(1, len(keyframe_pts)):  # start iterating at camera P1
 
-    pts1, pts2 = correct_matches(keyframe_pts[i], start_idx)
+    pts1, pts2 = correct_matches(keyframe_pts[i], keyframe_idx)
     if pts1 is None:
         break
 
@@ -159,7 +163,7 @@ for i in range(1, len(keyframe_pts)):  # start iterating at camera P1
 
 # add intermediate cameras
 frame_ranges = [len(keyframe_pts[i]) for i in range(len(keyframe_cameras)-1)]
-cameras, points_3d, points_2d = get_intermediate_cameras(keyframe_cameras, keyframe_world_points, keyframe_image_points, frame_ranges)
+cameras, points_3d, points_2d = get_intermediate_cameras(keyframe_cameras, keyframe_world_points, keyframe_image_points, frame_ranges, keyframe_idx)
 
 
 # bundle adjustment for each keyframe

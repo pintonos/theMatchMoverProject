@@ -58,12 +58,11 @@ def get_cube_points_from_axis_points(camera, axis_points):
 
     axis[3] = vec_0_3 + axis[0]
 
-    vec_0_4 = axis[2] - axis[5]  #vec_0_3 + vec_0_2
-
+    vec_0_4 = vec_0_3 + vec_0_2
     vec_0_5 = vec_0_3 + vec_0_1
 
     # points
-    p4 = vec_0_4 + axis[2]
+    p4 = vec_0_4 + axis[0]
     p5 = vec_0_5 + axis[0]
     p6 = axis[4]
 

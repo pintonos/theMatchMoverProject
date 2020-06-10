@@ -49,12 +49,13 @@ def draw_keyframe_inliers(start_idx, inliers_2d):
         cv2.waitKey(0)
 
 
-def get_cube_points_from_axis_points(camera, axis):
-    axis = np.squeeze(axis, axis=1)
+def get_cube_points_from_axis_points(camera, axis_points):
+    axis = np.squeeze(axis_points, axis=1).copy()
 
     vec_0_1 = axis[1] - axis[0]
     vec_0_2 = (axis[2] - axis[0])
     vec_0_3 = axis[0] - axis[3]
+
     axis[3] = vec_0_3 + axis[0]
 
     vec_0_4 = vec_0_3 + vec_0_2
@@ -106,3 +107,27 @@ def get_3d_axis(camera_start, start, camera_end, end):
     object_points = cv2.convertPointsFromHomogeneous(np.array(object_points))
 
     return object_points
+
+def get_3d_points_from_ref(camera_start, start, camera_end, end):
+    pts1 = pd.read_csv(REF_POINTS.format(frame=str(start)), sep=',', header=None, dtype=float).values
+    pts2 = pd.read_csv(REF_POINTS.format(frame=str(end)), sep=',', header=None, dtype=float).values
+
+    # undistort ref points
+    # second answer: https://stackoverflow.com/questions/16295551/how-to-correctly-use-cvtriangulatepoints/16299909
+    pts_l_norm = cv2.undistortPoints(np.expand_dims(pts1, axis=1).astype(dtype=np.float32), cameraMatrix=K,
+                                     distCoeffs=dist)
+    pts_r_norm = cv2.undistortPoints(np.expand_dims(pts2, axis=1).astype(dtype=np.float32), cameraMatrix=K,
+                                     distCoeffs=dist)
+
+    # triangulate points to get real world coordinates
+    P1 = np.c_[camera_start.R_mat, camera_start.t]
+    P2 = np.c_[camera_end.R_mat, camera_end.t]
+    world_coords = cv2.triangulatePoints(P1, P2, pts_l_norm, pts_r_norm)
+
+    # from homogeneous to normal coordinates
+    world_coords /= world_coords[3]
+    world_coords = world_coords[:-1]
+
+    world_coords = world_coords.transpose()
+
+    return np.expand_dims(np.array(world_coords), axis=1)

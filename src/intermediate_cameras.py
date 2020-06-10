@@ -99,10 +99,19 @@ keyframes_path = DATA_PATH + 'keyframes.npy'
 start_idx_path = DATA_PATH + 'start_idx.npy'
 keyframe_pts_path = DATA_PATH + 'keyframe_pts.npy'
 
-# get keyframes
-tracing = trace_points(start_frame, end_frame)
-keyframe_idx = find_keyframes(tracing)
-keyframe_pts = get_keyframe_pts(tracing, keyframe_idx)
+# trace points and find keyframes
+if os.path.isfile(keyframe_pts_path) and os.path.isfile(start_idx_path) and os.path.isfile(keyframes_path):
+    tracing = np.load(keyframes_path, allow_pickle=True)
+    keyframe_pts = np.load(keyframe_pts_path, allow_pickle=True)
+    keyframe_idx = np.load(start_idx_path, allow_pickle=True)
+else:
+    tracing = trace_points(start_frame, end_frame)
+    keyframe_idx = find_keyframes(tracing)
+    keyframe_pts = get_keyframe_pts(tracing, keyframe_idx)
+    # save data
+    np.save(keyframes_path, tracing)
+    np.save(keyframe_pts_path, keyframe_pts)
+    np.save(start_idx_path, keyframe_idx)
 
 # if os.path.isfile(keyframe_pts_path) and os.path.isfile(start_idx_path) and os.path.isfile(keyframes_path):
 #     keyframes = np.load(keyframes_path, allow_pickle=True)
@@ -183,7 +192,7 @@ for i, idx in enumerate(start_idx[1:]):
 #cameras = opt_cameras
 
 #cameras = keyframe_cameras
-start, end = 0, 100
+start, end = 0, 60
 axis = get_3d_points_from_ref(cameras[start], start, cameras[end-1], end)
 #axis = get_3d_axis(cameras[start], start, cameras[end], end)
 

@@ -1,7 +1,7 @@
 from functions import *
 from util import *
 
-MIN_MATCHES = 300
+MIN_MATCHES = 225
 
 
 def find_next_key_frame(idx1, idx2):

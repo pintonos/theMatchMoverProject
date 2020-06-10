@@ -11,21 +11,21 @@ from functions import *
 
 def draw_cube(img, pts):
     # bottom
-    cv2.line(img, (pts[0][0], pts[0][1]), (pts[1][0], pts[1][1]), (0, 255, 0), 2)
-    cv2.line(img, (pts[0][0], pts[0][1]), (pts[2][0], pts[2][1]), (0, 255, 0), 2)
+    cv2.line(img, (pts[0][0], pts[0][1]), (pts[1][0], pts[1][1]), (0, 0, 255), 2)
+    cv2.line(img, (pts[0][0], pts[0][1]), (pts[2][0], pts[2][1]), (0, 0, 255), 2)
     cv2.line(img, (pts[1][0], pts[1][1]), (pts[6][0], pts[6][1]), (0, 255, 0), 2)
     cv2.line(img, (pts[2][0], pts[2][1]), (pts[6][0], pts[6][1]), (0, 255, 0), 2)
     #cv2.drawContours(img, [np.asarray([(pts[0][0], pts[0][1]), (pts[1][0], pts[1][1]), (pts[0][0], pts[0][1]), (pts[2][0], pts[2][1]), (pts[1][0], pts[1][1]), (pts[6][0], pts[6][1]), (pts[2][0], pts[2][1]), (pts[6][0], pts[6][1])])], -1, (0, 255, 0), -3)
     # top
-    cv2.line(img, (pts[3][0], pts[3][1]), (pts[4][0], pts[4][1]), (0, 0, 255), 2)
-    cv2.line(img, (pts[3][0], pts[3][1]), (pts[5][0], pts[5][1]), (0, 0, 255), 2)
-    cv2.line(img, (pts[5][0], pts[5][1]), (pts[7][0], pts[7][1]), (0, 0, 255), 2)
-    cv2.line(img, (pts[4][0], pts[4][1]), (pts[7][0], pts[7][1]), (0, 0, 255), 2)
+    cv2.line(img, (pts[3][0], pts[3][1]), (pts[4][0], pts[4][1]), (0, 255, 0), 2)
+    cv2.line(img, (pts[3][0], pts[3][1]), (pts[5][0], pts[5][1]), (0, 255, 0), 2)
+    cv2.line(img, (pts[5][0], pts[5][1]), (pts[7][0], pts[7][1]), (0, 255, 0), 2)
+    cv2.line(img, (pts[4][0], pts[4][1]), (pts[7][0], pts[7][1]), (0, 255, 0), 2)
     # connections
-    cv2.line(img, (pts[0][0], pts[0][1]), (pts[3][0], pts[3][1]), (255, 0, 0), 2)
-    cv2.line(img, (pts[2][0], pts[2][1]), (pts[4][0], pts[4][1]), (255, 0, 0), 2)
-    cv2.line(img, (pts[6][0], pts[6][1]), (pts[7][0], pts[7][1]), (255, 0, 0), 2)
-    cv2.line(img, (pts[1][0], pts[1][1]), (pts[5][0], pts[5][1]), (255, 0, 0), 2)
+    cv2.line(img, (pts[0][0], pts[0][1]), (pts[3][0], pts[3][1]), (0, 0, 255), 2)
+    cv2.line(img, (pts[2][0], pts[2][1]), (pts[4][0], pts[4][1]), (0, 255, 0), 2)
+    cv2.line(img, (pts[6][0], pts[6][1]), (pts[7][0], pts[7][1]), (0, 255, 0), 2)
+    cv2.line(img, (pts[1][0], pts[1][1]), (pts[5][0], pts[5][1]), (0, 255, 0), 2)
 
 
 def draw_axis(img, points):
@@ -51,27 +51,26 @@ def draw_keyframe_inliers(start_idx, inliers_2d):
 
 def get_cube_points_from_axis_points(camera, axis):
     axis = np.squeeze(axis, axis=1)
-    # vectors
-    scale_factor_xy = 0.5
+
     vec_0_1 = axis[1] - axis[0]
     vec_0_2 = (axis[2] - axis[0])
-
-    vec_0_3 = axis[3] - axis[0]
+    vec_0_3 = axis[0] - axis[3]
     axis[3] = vec_0_3 + axis[0]
 
     vec_0_4 = vec_0_3 + vec_0_2
     vec_0_5 = vec_0_3 + vec_0_1
-    vec_0_6 = vec_0_1 + vec_0_2
-    vec_2_7 = (vec_0_4 + axis[0] - axis[2]) + (vec_0_6 + axis[0] - axis[2])
 
     # points
     p4 = vec_0_4 + axis[0]
     p5 = vec_0_5 + axis[0]
-    p6 = vec_0_6 + axis[0]
-    p7 = vec_2_7 + axis[2]
+    p6 = axis[4]
+
+    vec_2_4 = p4 - axis[2]
+    vec_2_6 = p6 - axis[2]
+    p7 = vec_2_4 + vec_2_6 + axis[2]
 
     # add new points to axis to get cube
-    cube = np.vstack((axis, p4))
+    cube = np.vstack((axis[:4], p4))
     cube = np.vstack((cube, p5))
     cube = np.vstack((cube, p6))
     cube = np.vstack((cube, p7))
@@ -100,6 +99,7 @@ def get_3d_axis(camera_start, start, camera_end, end):
     P2 = get_P(camera_end.R_mat, camera_end.t, K)
 
     object_points = []
+
     for p1, p2 in list(zip(pts1, pts2)):
         ret = cv2.triangulatePoints(P1, P2, np.array([p1[0], p1[1]]), np.array([p2[0], p2[1]]))
         object_points.append(ret)

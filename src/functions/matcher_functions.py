@@ -26,6 +26,7 @@ def get_harris_corner(img):
     dst = np.uint8(dst)
     return dst
 
+
 def filter_matches_with_distance(pts1, pts2, matches, threshold_x=100, threshold_y=50):
     filtered_pts1 = []
     filtered_pts2 = []
@@ -38,7 +39,8 @@ def filter_matches_with_distance(pts1, pts2, matches, threshold_x=100, threshold
 
     return filtered_pts1, filtered_pts2, filtered_matches
 
-def lowes_ratio_test(kp1, kp2, matches, threshold=0.7):
+
+def lowes_ratio_test(kp1, kp2, matches, threshold=0.8):
     """
     Ratio test as per Lowe's paper.
     :param threshold: threshold to compare matches
@@ -152,7 +154,7 @@ def get_points(img1, img2, detector=Detector.ORB, filter=True, matcher=Matcher.B
         kp2, des2 = sift.compute(gray2, fast.detect(gray2, None))
     elif detector == Detector.ORB:
         # TODO change default parameters, see https://docs.opencv.org/4.2.0/db/d95/classcv_1_1ORB.html
-        orb = cv2.ORB_create(nfeatures=2000, scaleFactor=2)
+        orb = cv2.ORB_create(nfeatures=2000, scaleFactor=1.5)
         kp1, des1 = orb.detectAndCompute(gray1, None)
         kp2, des2 = orb.detectAndCompute(gray2, None)
 

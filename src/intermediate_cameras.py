@@ -37,9 +37,11 @@ def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, frame_range
     for i in range(len(keyframe_cameras)-1):
         half_idx = start_idx[i + 1] - start_idx[i]
         inliers_list = []
+        camera_list = []
         for j in range(1, frame_ranges[i]):
             if j < half_idx:
                 _, R, t, inliers = cv2.solvePnPRansac(points_3d[i][j], points_2d[i][j], K, dist, reprojectionError=3.0)
+                camera_list.append(Camera(R, t))
                 inliers_list.append(np.asarray(inliers).flatten())
         filtered_inliers = reduce(np.intersect1d, (inliers_list))
 
@@ -51,7 +53,7 @@ def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, frame_range
         for j in range(1, frame_ranges[i]):
             if j < half_idx:
                 pts1, pts2 = get_inlier_points_simple(points_3d[i][j], points_2d[i][j], filtered_inliers)
-                all_cameras.append(Camera(R, t))
+                all_cameras.append(camera_list[j-1])
                 all_3d_points.append(pts1)
                 all_2d_points.append(pts2)
     return all_cameras, all_3d_points, all_2d_points
@@ -92,7 +94,7 @@ def get_3d_points_for_consecutive_frames(points_3d, prev_cam, curr_cam, points_2
 reader, writer = get_video_streams()
 
 start_frame = 0
-end_frame = 13  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
+end_frame = 100  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 keyframes_path = DATA_PATH + 'keyframes.npy'
 start_idx_path = DATA_PATH + 'start_idx.npy'
 keyframe_pts_path = DATA_PATH + 'keyframe_pts.npy'
@@ -181,14 +183,17 @@ for i, idx in enumerate(start_idx[1:]):
 #cameras = opt_cameras
 
 #cameras = keyframe_cameras
-start, end = 0, 30
-axis = get_3d_axis(cameras[start], start, cameras[end], end)
+start, end = 0, 100
+axis = get_3d_points_from_ref(cameras[start], start, cameras[end-1], end)
+#axis = get_3d_axis(cameras[start], start, cameras[end], end)
 
 # save/show frames
 for i in range(len(cameras)):
     _, img = reader.read()
     points_2d = get_cube_points_from_axis_points(cameras[i], axis)
     draw_cube(img, points_2d)
+    #points_2d, _ = cv2.projectPoints(axis, cameras[i].R_mat, cameras[i].t, K, dist)
+    #draw_axis(img, points_2d)
     print('show frame:', i)
     cv2.imshow('normal', cv2.resize(img, DEMO_RESIZE))
     cv2.waitKey(0)

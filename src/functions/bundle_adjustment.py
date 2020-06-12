@@ -119,7 +119,7 @@ def build_camera(R, t):
     camera = R.flatten()
     camera = np.append(camera, t.flatten())
     camera = np.append(camera, K[0][0])
-    camera = np.append(camera, dist[0, 0:2].flatten())  # TODO our dist in 2 parameter?
+    camera = np.append(camera, [0.0, 0.0])#dist[0, 0:2].flatten())  # TODO our dist in 2 parameter?
     return camera
 
 
@@ -154,36 +154,21 @@ def prepare_data(cameras, frame_points_3d, frame_points_2d, keyframe_idx):
 
     camera_id = 0
     pt_id_counter = 0
-    close_idx1 = []
-    close_idx2 = []
-    keyframe_counter = 0
     for k, pts_2d in enumerate(frame_points_2d):
-        keyframe_id = keyframe_idx[keyframe_counter]
-        pts_3d = frame_points_3d[k]
+        if k != 0:
+            points_2d = np.vstack((points_2d, frame_points_2d[k-1][-1]))
+            points_3d = np.vstack((points_3d, frame_points_3d[k-1][-1]))
+            camera_indices += [camera_id for _ in range(len(frame_points_2d[k-1][-1]))]
+            point_indices += [i for i in range(pt_id_counter, pt_id_counter + len(frame_points_2d[k-1][-1]))]
+            pt_id_counter = pt_id_counter + len(frame_points_2d[k-1][-1])
 
-        if k in keyframe_idx[1:]:
-            pt_id_counter = pt_id_counter + len(pts_2d)
-            keyframe_counter += 1
-
-        #if k in keyframe_idx:
-            #close_idx1, close_idx2 = get_close_matchpoints(frame_points_2d[keyframe_id-1], frame_points_2d[keyframe_id])
-
-        for j in range(pts_2d.shape[0]):
-            #if j in close_idx1 and k < len(frame_points_2d):
-                #points_2d = np.vstack((points_2d, pts_2d[j]))
-
-            points_2d = np.vstack((points_2d, pts_2d[j]))
-
-        for j in range(pts_3d.shape[0]):
-            #if j in close_idx1:
-                #points_3d = np.vstack((points_3d, frame_points_3d[k+keyframe_id]))
-
-            points_3d = np.vstack((points_3d, pts_3d[j]))
-
-        camera_indices += [camera_id for _ in range(len(pts_2d))]
-        point_indices += [i for i in range(pt_id_counter, pt_id_counter + len(pts_2d))]
+        points_2d = np.vstack((points_2d, frame_points_2d[k][0]))
+        points_3d = np.vstack((points_3d, frame_points_3d[k][0]))
+        camera_indices += [camera_id for _ in range(pts_2d.shape[1])]
+        point_indices += [i for i in range(pt_id_counter, pt_id_counter + pts_2d.shape[1])]
 
         camera_id += 1
+        pt_id_counter = pt_id_counter + pts_2d.shape[1]
 
     return camera_params, np.asarray(camera_indices), np.asarray(point_indices), points_3d, points_2d
 
@@ -268,7 +253,7 @@ def start_bundle_adjustment(cameras, points3d, points2d, keyframe_idx):
 
     A = bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices)
     t0 = time.time()
-    res = least_squares(get_residuals, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-5, method='trf',
+    res = least_squares(get_residuals, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-4, method='trf',
                         args=(n_cameras, n_points, camera_indices, point_indices, points_2d))
     t1 = time.time()
 

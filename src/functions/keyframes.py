@@ -37,7 +37,7 @@ def trace_points(idx1, idx2):
                 continue
 
             print('frame ' + str(f) + ' and ' + str(curr_idx))
-            match_points_1, match_points_2, matches = get_points(prev_frame, frame, detector=Detector.ORB)
+            match_points_1, match_points_2, matches = get_points(prev_frame, frame, detector=Detector.SURF)
             prev_frame = frame
 
             if traced_matches is None:
@@ -71,17 +71,19 @@ def trace_points(idx1, idx2):
 
 
 def find_keyframes(tracing):
-    keyframes = [0]
-    keyframe = 0
+    keyframes = [0, 12]
+    keyframe_idx = 0
+    keyframe_idx2 = 12
 
-    while keyframe < len(tracing)-1:
-        keyframe += tracing[keyframe][0]['frames'] + 1
-        keyframe = min(keyframe, len(tracing)-1)
+    while keyframe_idx < len(tracing)-1 and keyframe_idx2 < len(tracing)-1:
+        keyframe_idx2 += tracing[keyframe_idx2][0]['frames'] + 1
+        keyframe_idx2 = min(keyframe_idx2, len(tracing) - 1)
 
-        # add halfway index for initialization
-        if len(keyframes) == 1:
-            keyframes.append(keyframe // 2)
-        keyframes.append(keyframe)
+        keyframe_idx += tracing[keyframe_idx][0]['frames'] + 1
+        keyframe_idx = min(keyframe_idx, len(tracing) - 1)
+
+        keyframes.append(keyframe_idx)
+        keyframes.append(keyframe_idx2)
 
     return keyframes
 

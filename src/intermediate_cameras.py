@@ -65,7 +65,7 @@ def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, frame_range
     return all_cameras, all_3d_points, all_2d_points
 
 
-def correct_matches(points, start_idx):
+def correct_matches(points, start_idx, i):
     halfway_idx = start_idx[i] - start_idx[i - 1]
     if halfway_idx >= len(points):
         return None, None
@@ -156,7 +156,7 @@ keyframe_image_points = [points_2d]
 print('get keyframe cameras ...')
 for i in range(1, len(keyframe_pts)):  # start iterating at camera P1
 
-    pts1, pts2 = correct_matches(keyframe_pts[i], keyframe_idx)
+    pts1, pts2 = correct_matches(keyframe_pts[i], keyframe_idx, i)
     if pts1 is None:
         break
 
@@ -165,7 +165,7 @@ for i in range(1, len(keyframe_pts)):  # start iterating at camera P1
 
     # get next camera by resectioning form previous and current camera
     points_3d = triangulate_points(prev_cam.R_mat, prev_cam.t, curr_cam.R_mat, curr_cam.t, pts1, pts2, dist, K)
-    _, R, t, inliers = cv2.solvePnPRansac(points_3d, keyframe_pts[i][-1], K, dist, reprojectionError=10.0)
+    _, R, t, inliers = cv2.solvePnPRansac(points_3d, keyframe_pts[i][-1], K, dist, reprojectionError=5.0)
     print(i, '\t', len(inliers))
 
     # filter points with inliers list
@@ -195,8 +195,9 @@ for i, idx in enumerate(start_idx[1:]):
 '''
 
 # global bundle adjustment
-opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_world_points, keyframe_image_points, keyframe_idx)
-cameras = opt_cameras
+#opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_world_points, keyframe_image_points, keyframe_idx)
+#cameras = opt_cameras
+cameras = keyframe_cameras
 
 #start, end = 0, 60
 #axis = get_3d_points_from_ref(cameras[start], start, cameras[end-1], end)

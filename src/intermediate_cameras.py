@@ -100,7 +100,7 @@ def get_3d_points_for_consecutive_frames(points_3d, prev_cam, curr_cam, points_2
 reader, writer = get_video_streams()
 
 start_frame = 0
-end_frame = 150  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
+end_frame = 30  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 keyframes_path = DATA_PATH + 'keyframes.npy'
 start_idx_path = DATA_PATH + 'start_idx.npy'
 keyframe_pts_path = DATA_PATH + 'keyframe_pts.npy'
@@ -118,7 +118,8 @@ else:
     np.save(keyframes_path, tracing)
     np.save(keyframe_pts_path, keyframe_pts)
     np.save(start_idx_path, keyframe_idx)
-
+keyframe_idx = find_keyframes(tracing)
+keyframe_pts = get_keyframe_pts(tracing, keyframe_idx)
 print('found keyframes at positions:', keyframe_idx)
 
 # get cameras P0 and P2
@@ -187,7 +188,7 @@ for i, idx in enumerate(start_idx[1:]):
 #cameras = keyframe_cameras
 
 start, end = 0, 30
-axis = get_3d_points_from_ref(cameras[start], start, cameras[end-1], end)
+axis = get_3d_points_from_ref(cameras[start], start, cameras[end-2], end)
 
 # save/show frames
 for i in range(len(cameras)):

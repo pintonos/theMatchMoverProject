@@ -119,7 +119,7 @@ def build_camera(R, t):
     camera = R.flatten()
     camera = np.append(camera, t.flatten())
     camera = np.append(camera, K[0][0])
-    camera = np.append(camera, [0.0, 0.0])#dist[0, 0:2].flatten())  # TODO our dist in 2 parameter?
+    camera = np.append(camera, dist[0, 0:2].flatten())
     return camera
 
 

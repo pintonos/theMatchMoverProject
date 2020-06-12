@@ -1,7 +1,7 @@
 from functions import *
 from util import *
 
-MIN_MATCHES = 225
+MIN_MATCHES = 300
 
 
 def trace_points(idx1, idx2):
@@ -71,19 +71,21 @@ def trace_points(idx1, idx2):
 
 
 def find_keyframes(tracing):
-    keyframes = [0, 12]
+    keyframes = [0, tracing[0][0]['frames'] // 2]
     keyframe_idx = 0
     keyframe_idx2 = 12
 
     while keyframe_idx < len(tracing)-1 and keyframe_idx2 < len(tracing)-1:
         keyframe_idx2 += tracing[keyframe_idx2][0]['frames'] + 1
-        keyframe_idx2 = min(keyframe_idx2, len(tracing) - 1)
+        keyframe_idx2 = min(keyframe_idx2, len(tracing)-1)
 
         keyframe_idx += tracing[keyframe_idx][0]['frames'] + 1
-        keyframe_idx = min(keyframe_idx, len(tracing) - 1)
+        keyframe_idx = min(keyframe_idx, len(tracing)-1)
 
-        keyframes.append(keyframe_idx)
-        keyframes.append(keyframe_idx2)
+        if keyframe_idx not in keyframes:
+            keyframes.append(keyframe_idx)
+        if keyframe_idx2 not in keyframes:
+            keyframes.append(keyframe_idx2)
 
     return keyframes
 

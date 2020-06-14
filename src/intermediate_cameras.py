@@ -35,7 +35,7 @@ def get_inlier_points_simple(points_3d, points_2d, inliers):
     return np.asarray(filtered_3d), np.asarray(filtered_2d)
 
 
-def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, frame_ranges, start_idx):
+def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, start_idx):
     print('get intermediate cameras ...')
     all_cameras = []
     all_3d_points = []
@@ -44,24 +44,25 @@ def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, frame_range
         half_idx = start_idx[i + 1] - start_idx[i]
         inliers_list = []
         camera_list = []
-        for j in range(1, frame_ranges[i]):
-            if j < half_idx:
-                _, R, t, inliers = cv2.solvePnPRansac(points_3d[i][j], points_2d[i][j], K, dist, reprojectionError=3.0)
-                camera_list.append(Camera(R, t))
-                inliers_list.append(np.asarray(inliers).flatten())
+        for j in range(0, half_idx - 1):
+            _, R, t, inliers = cv2.solvePnPRansac(points_3d[i][j], points_2d[i][j], K, dist, reprojectionError=5.0)
+            camera_list.append(Camera(R, t))
+            inliers_list.append(np.asarray(inliers).flatten())
         filtered_inliers = reduce(np.intersect1d, (inliers_list))
 
+        # keyframe camera
         pts1, pts2 = get_inlier_points_simple(points_3d[i][0], points_2d[i][0], filtered_inliers)
         all_cameras.append(keyframe_cameras[i])
         all_3d_points.append(pts1)
         all_2d_points.append(pts2)
 
-        for j in range(1, frame_ranges[i]):
-            if j < half_idx:
-                pts1, pts2 = get_inlier_points_simple(points_3d[i][j], points_2d[i][j], filtered_inliers)
-                all_cameras.append(camera_list[j-1])
-                all_3d_points.append(pts1)
-                all_2d_points.append(pts2)
+        # intermediate cameras
+        for j in range(0, half_idx - 1):
+            pts1, pts2 = get_inlier_points_simple(points_3d[i][j], points_2d[i][j], filtered_inliers)
+            all_cameras.append(camera_list[j])
+            #all_cameras.append(keyframe_cameras[i]) # TODO test why keyframes only better?
+            all_3d_points.append(pts1)
+            all_2d_points.append(pts2)
     return all_cameras, all_3d_points, all_2d_points
 
 
@@ -99,11 +100,14 @@ def get_3d_points_for_consecutive_frames(points_3d, prev_cam, curr_cam, points_2
 
 reader, writer = get_video_streams()
 
+keyframes_only = False
+
 start_frame = 0
-end_frame = 30  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
+end_frame = 70  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 keyframes_path = DATA_PATH + 'keyframes.npy'
 start_idx_path = DATA_PATH + 'start_idx.npy'
 keyframe_pts_path = DATA_PATH + 'keyframe_pts.npy'
+
 
 # trace points and find keyframes
 if os.path.isfile(keyframe_pts_path) and os.path.isfile(start_idx_path) and os.path.isfile(keyframes_path):
@@ -121,6 +125,8 @@ else:
 keyframe_idx = find_keyframes(tracing)
 keyframe_pts = get_keyframe_pts(tracing, keyframe_idx)
 print('found keyframes at positions:', keyframe_idx)
+
+keyframe_pts = get_keyframe_pts(tracing, keyframe_idx)
 
 # get cameras P0 and P2
 R0, t0 = INIT_ORIENTATION, INIT_POSITION
@@ -167,53 +173,53 @@ for i in range(1, len(keyframe_pts)):  # start iterating at camera P1
     keyframe_world_points.append(points_3d)
     keyframe_image_points.append(points_2d)
 
-# add intermediate cameras
-frame_ranges = [len(keyframe_pts[i]) for i in range(len(keyframe_cameras)-1)]
-cameras, points_3d, points_2d = get_intermediate_cameras(keyframe_cameras, keyframe_world_points, keyframe_image_points, frame_ranges, keyframe_idx)
+if keyframes_only:
+    # opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_world_points, keyframe_image_points, keyframe_idx)
+    # cameras = opt_cameras
+    cameras = keyframe_cameras
+
+    # only show keyframes
+    axis = get_3d_points_from_ref(cameras[0], 0, cameras[3], 30)
+    keyframe_idx = np.append(keyframe_idx, end_frame)
+    for i, c in enumerate(cameras):
+        img = get_frame(keyframe_idx[i])
+        points_2d = get_cube_points_from_axis_points(cameras[i], axis)
+        draw_cube(img, points_2d)
+        #draw_points(img, functools.reduce(operator.iconcat, keyframe_image_points[i].astype(int).tolist(), []))
+        print('show frame:', keyframe_idx[i])
+        cv2.imshow('normal', cv2.resize(img, DEMO_RESIZE))
+        cv2.waitKey(0)
+
+else:
+    # add intermediate cameras
+    cameras, points_3d, points_2d = get_intermediate_cameras(keyframe_cameras, keyframe_world_points, keyframe_image_points, keyframe_idx)
+
+    # bundle adjustment for each keyframe
+    '''
+    opt_cameras, opt_points_3d = [], []
+    for i, idx in enumerate(start_idx[1:]):
+        last_idx = start_idx[i]
+        opt_cameras_tmp, opt_points_3d_tmp = start_bundle_adjustment(cameras[last_idx:idx], points_3d[last_idx:idx], points_2d[last_idx:idx], [0, idx-last_idx])
+        opt_cameras = opt_cameras + opt_cameras_tmp
+        opt_points_3d = opt_points_3d + opt_points_3d_tmp
+    '''
+
+    start, end = 0, 30
+    axis = get_3d_points_from_ref(cameras[start], start, cameras[32], end)
+
+    # save/show frames
+    for i in range(len(cameras)):
+        _, img = reader.read()
+        points_2d = get_cube_points_from_axis_points(cameras[i], axis)
+        draw_cube(img, points_2d)
+        #points_2d, _ = cv2.projectPoints(axis, cameras[i].R_mat, cameras[i].t, K, dist)
+        #draw_axis(img, points_2d)
+        print('show frame:', i)
+        cv2.imshow('normal', cv2.resize(img, DEMO_RESIZE))
+        cv2.waitKey(0)
+        writer.write(img)
 
 
-# bundle adjustment for each keyframe
-'''
-opt_cameras, opt_points_3d = [], []
-for i, idx in enumerate(start_idx[1:]):
-    last_idx = start_idx[i]
-    opt_cameras_tmp, opt_points_3d_tmp = start_bundle_adjustment(cameras[last_idx:idx], points_3d[last_idx:idx], points_2d[last_idx:idx], [0, idx-last_idx])
-    opt_cameras = opt_cameras + opt_cameras_tmp
-    opt_points_3d = opt_points_3d + opt_points_3d_tmp
-'''
-
-# global bundle adjustment
-#opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_world_points, keyframe_image_points, keyframe_idx)
-#cameras = opt_cameras
-#cameras = keyframe_cameras
-
-start, end = 0, 30
-axis = get_3d_points_from_ref(cameras[start], start, cameras[end-2], end)
-
-# save/show frames
-for i in range(len(cameras)):
-    _, img = reader.read()
-    points_2d = get_cube_points_from_axis_points(cameras[i], axis)
-    draw_cube(img, points_2d)
-    #points_2d, _ = cv2.projectPoints(axis, cameras[i].R_mat, cameras[i].t, K, dist)
-    #draw_axis(img, points_2d)
-    print('show frame:', i)
-    cv2.imshow('normal', cv2.resize(img, DEMO_RESIZE))
-    cv2.waitKey(0)
-    writer.write(img)
-
-'''
-# only show keyframes
-axis = get_3d_axis(cameras[0], 0, cameras[2], 30)
-keyframe_idx = np.append(keyframe_idx, end_frame)
-for i, c in enumerate(cameras):
-    img = get_frame(keyframe_idx[i])
-    points_2d, _ = cv2.projectPoints(axis, c.R_mat, c.t, K, dist)
-    draw_axis(img, points_2d)
-    #draw_points(img, functools.reduce(operator.iconcat, keyframe_image_points[i].astype(int).tolist(), []))
-    print('show frame:', keyframe_idx[i])
-    cv2.imshow('normal', cv2.resize(img, DEMO_RESIZE))
-    cv2.waitKey(0)'''
 
 reader.release()
 writer.release()

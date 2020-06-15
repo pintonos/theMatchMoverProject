@@ -38,6 +38,19 @@ def get_inlier_points_simple(points_3d, points_2d, inliers):
 def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, start_idx):
     print('get intermediate cameras ...')
     all_cameras = []
+
+    j = -1  # keyframe index
+    k = 0  # frame index
+    for i in range(start_idx[0], start_idx[-1]):
+        if i in start_idx:  # keyframe
+            j += 1
+            k = 0
+            all_cameras.append(keyframe_cameras[j])
+        else:  # intermediate frame
+            _, R, t, inliers = cv2.solvePnPRansac(points_3d[j][k], points_2d[j][k], K, dist, reprojectionError=5.0)
+            all_cameras.append(Camera(R, t))
+            k += 1
+    """
     for i in range(len(keyframe_cameras)-1):
         camera_list = []
         if i != 0:
@@ -46,8 +59,9 @@ def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, start_idx):
         else:
             start = 1
             end = start_idx[1]
+        print(start, end)
         for j in range(start, end):
-            _, R, t, inliers = cv2.solvePnPRansac(points_3d[i][j], points_2d[i][j], K, dist, reprojectionError=5.0)
+            #_, R, t, inliers = cv2.solvePnPRansac(points_3d[i][j], points_2d[i][j], K, dist, reprojectionError=5.0)
             camera_list.append(Camera(R, t))
 
         # keyframe camera
@@ -57,7 +71,8 @@ def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, start_idx):
         # intermediate cameras
         for k, j in enumerate(range(start, end)):
             all_cameras.append(camera_list[k])
-            #all_cameras.append(keyframe_cameras[i]) # TODO test why keyframes only better?
+            #all_cameras.append(keyframe_cameras[i]) # TODO test why keyframes only better?     
+    """
     return all_cameras
 
 
@@ -94,7 +109,7 @@ def get_3d_points_for_consecutive_frames(points_3d, prev_cam, curr_cam, points_2
 
 reader, writer = get_video_streams()
 
-keyframes_only = False
+keyframes_only = True
 
 start_frame = 0
 end_frame = 100  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))

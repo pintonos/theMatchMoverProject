@@ -44,8 +44,14 @@ def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, start_idx):
         half_idx = start_idx[i + 1] - start_idx[i]
         inliers_list = []
         camera_list = []
-        for j in range(0, half_idx - 1):
-            _, R, t, inliers = cv2.solvePnPRansac(points_3d[i][j], points_2d[i][j], K, dist, reprojectionError=5.0)
+        if i != 0:
+            start = half_idx
+            end = len(points_2d[i])
+        else:
+            start = 0
+            end = half_idx - 1
+        for j in range(start, end):
+            _, R, t, inliers = cv2.solvePnPRansac(points_3d[i][j], points_2d[i][j], K, dist, reprojectionError=3.0)
             camera_list.append(Camera(R, t))
             inliers_list.append(np.asarray(inliers).flatten())
         filtered_inliers = reduce(np.intersect1d, (inliers_list))
@@ -57,9 +63,9 @@ def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, start_idx):
         all_2d_points.append(pts2)
 
         # intermediate cameras
-        for j in range(0, half_idx - 1):
+        for k, j in enumerate(range(start, end)):
             pts1, pts2 = get_inlier_points_simple(points_3d[i][j], points_2d[i][j], filtered_inliers)
-            all_cameras.append(camera_list[j])
+            all_cameras.append(camera_list[k])
             #all_cameras.append(keyframe_cameras[i]) # TODO test why keyframes only better?
             all_3d_points.append(pts1)
             all_2d_points.append(pts2)

@@ -1,7 +1,6 @@
 from functions import *
 import cv2
 import os
-from functools import reduce
 
 
 def get_inlier_points(points_3d, points_2d, inliers):
@@ -42,7 +41,7 @@ def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, start_idx):
     j = -1  # keyframe index
     k = 0  # frame index
     for i in range(start_idx[0], start_idx[-1]):
-        if i in start_idx:  # keyframe
+        if i in start_idx[:-1]:  # keyframe
             j += 1
             if j == 0:
                 k = 0  # first keyframe
@@ -53,6 +52,9 @@ def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, start_idx):
             _, R, t, inliers = cv2.solvePnPRansac(points_3d[j][k], points_2d[j][k], K, dist, reprojectionError=0.5)
             all_cameras.append(Camera(R, t))
             k += 1
+
+    # last frame camera
+    all_cameras.append(keyframe_cameras[-1])
 
     return all_cameras
 
@@ -90,33 +92,28 @@ def get_3d_points_for_consecutive_frames(points_3d, prev_cam, curr_cam, points_2
 
 reader, writer = get_video_streams()
 
-keyframes_only = True
+keyframes_only = False
 
 start_frame = 0
 end_frame = 100  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 keyframes_path = DATA_PATH + 'keyframes.npy'
-start_idx_path = DATA_PATH + 'start_idx.npy'
+keyframe_idx_path = DATA_PATH + 'keyframe_idx.npy'
 keyframe_pts_path = DATA_PATH + 'keyframe_pts.npy'
 
-
-# trace points and find keyframes
-if os.path.isfile(keyframe_pts_path) and os.path.isfile(start_idx_path) and os.path.isfile(keyframes_path):
-    tracing = np.load(keyframes_path, allow_pickle=True)
+# get keyframes
+if os.path.isfile(keyframe_pts_path) and os.path.isfile(keyframe_idx_path) and os.path.isfile(keyframes_path):
+    keyframes = np.load(keyframes_path, allow_pickle=True)
     keyframe_pts = np.load(keyframe_pts_path, allow_pickle=True)
-    keyframe_idx = np.load(start_idx_path, allow_pickle=True)
+    keyframe_idx = np.load(keyframe_idx_path, allow_pickle=True)
 else:
-    tracing = trace_points(start_frame, end_frame)
-    keyframe_idx = find_keyframes(tracing)
-    keyframe_pts = get_keyframe_pts(tracing, keyframe_idx)
+    keyframes, keyframe_idx = get_all_keyframes(start_frame, end_frame)
+    keyframe_pts = get_keyframe_pts(keyframes)
     # save data
-    np.save(keyframes_path, tracing)
+    np.save(keyframes_path, keyframes)
     np.save(keyframe_pts_path, keyframe_pts)
-    np.save(start_idx_path, keyframe_idx)
-keyframe_idx = find_keyframes(tracing)
-keyframe_pts = get_keyframe_pts(tracing, keyframe_idx)
-print('found keyframes at positions:', keyframe_idx)
+    np.save(keyframe_idx_path, keyframe_idx)
 
-keyframe_pts = get_keyframe_pts(tracing, keyframe_idx)
+print('found keyframes at positions:', keyframe_idx)
 
 # get cameras P0 and P2
 R0, t0 = INIT_ORIENTATION, INIT_POSITION
@@ -125,7 +122,7 @@ points_3d_0 = triangulate_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pt
 
 # compute P1 (halfway between P0 and P2)
 halfway_idx = keyframe_idx[1] - keyframe_idx[0]
-_, R, t, inliers = cv2.solvePnPRansac(points_3d_0, keyframe_pts[0][halfway_idx], K, dist, reprojectionError=5.0)
+_, R, t, inliers = cv2.solvePnPRansac(points_3d_0, keyframe_pts[0][halfway_idx], K, dist, reprojectionError=2.0)
 points_3d, points_2d = get_inlier_points(points_3d_0, keyframe_pts[0], inliers)
 
 P0 = Camera(R0, t0)
@@ -139,7 +136,7 @@ keyframe_image_points = [points_2d]
 
 # start resectioning
 print('get keyframe cameras ...')
-for i in range(2, len(keyframe_pts)):  # start iterating at camera P1
+for i in range(2, len(keyframe_pts) + 1):  # start iterating at camera P1
 
     halfway_idx = keyframe_idx[i - 1] - keyframe_idx[i - 2]
     pts1, pts2 = correct_matches(keyframe_pts[i-2], halfway_idx)
@@ -151,12 +148,11 @@ for i in range(2, len(keyframe_pts)):  # start iterating at camera P1
 
     # get next camera by resectioning from previous and current camera
     points_3d = triangulate_points(prev_cam.R_mat, prev_cam.t, curr_cam.R_mat, curr_cam.t, pts1, pts2, dist, K)
-    _, R, t, inliers = cv2.solvePnPRansac(points_3d, keyframe_pts[i-2][-1], K, dist, reprojectionError=5.0)
+    _, R, t, inliers = cv2.solvePnPRansac(points_3d, keyframe_pts[i-2][-1], K, dist, reprojectionError=2.0)
     print(i, '\t', len(inliers))
 
     # filter points with inliers list
     points_3d, points_2d = get_inlier_points(points_3d, keyframe_pts[i-2], inliers)
-    filtered_tracing = filter_tracing(tracing, inliers, keyframe_idx[i-2])
     points_3d = get_3d_points_for_consecutive_frames(points_3d, prev_cam, curr_cam, points_2d)
 
     # append to lists
@@ -171,7 +167,7 @@ if keyframes_only:
     cameras = keyframe_cameras
 
     # only show keyframes
-    axis = get_3d_points_from_ref(cameras[0], 0, cameras[2], 32)
+    axis = get_3d_points_from_ref(cameras[0], 0, cameras[5], 76)
     keyframe_idx = np.append(keyframe_idx, end_frame)
     for i, c in enumerate(cameras):
         img = get_frame(keyframe_idx[i])
@@ -185,7 +181,7 @@ if keyframes_only:
 
 else:
     # add intermediate cameras
-    cameras = get_intermediate_cameras(keyframe_cameras, keyframe_world_points, keyframe_image_points, keyframe_idx) # TODO keyframes still manipuilated?
+    cameras = get_intermediate_cameras(keyframe_cameras, keyframe_world_points, keyframe_image_points, keyframe_idx)
 
     # bundle adjustment for each keyframe
     '''
@@ -197,7 +193,7 @@ else:
         opt_points_3d = opt_points_3d + opt_points_3d_tmp
     '''
 
-    start, end = 0, 32
+    start, end = 0, 76
     axis = get_3d_points_from_ref(cameras[start], start, cameras[end], end)
 
     # save/show frames

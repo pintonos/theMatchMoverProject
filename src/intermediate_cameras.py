@@ -47,10 +47,10 @@ def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, start_idx):
             if j == 0:
                 k = 0  # first keyframe
             else:
-                k = start_idx[j] - start_idx[j - 1] - 1  # other keyframes
+                k = start_idx[j] - start_idx[j - 1]  # other keyframes
             all_cameras.append(keyframe_cameras[j])
         else:  # intermediate frame
-            _, R, t, inliers = cv2.solvePnPRansac(points_3d[j][k], points_2d[j][k], K, dist, reprojectionError=5.0)
+            _, R, t, inliers = cv2.solvePnPRansac(points_3d[j][k], points_2d[j][k], K, dist, reprojectionError=0.5)
             all_cameras.append(Camera(R, t))
             k += 1
 
@@ -90,7 +90,7 @@ def get_3d_points_for_consecutive_frames(points_3d, prev_cam, curr_cam, points_2
 
 reader, writer = get_video_streams()
 
-keyframes_only = False
+keyframes_only = True
 
 start_frame = 0
 end_frame = 100  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -165,8 +165,9 @@ for i in range(2, len(keyframe_pts)):  # start iterating at camera P1
     keyframe_image_points.append(points_2d)
 
 if keyframes_only:
-    # opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras, keyframe_world_points, keyframe_image_points, keyframe_idx)
-    # cameras = opt_cameras
+    #opt_cameras, opt_points_3d = start_bundle_adjustment(keyframe_cameras[:4], keyframe_world_points[:4], keyframe_image_points[:4], keyframe_idx[:5])
+    #cameras = opt_cameras
+
     cameras = keyframe_cameras
 
     # only show keyframes
@@ -184,7 +185,7 @@ if keyframes_only:
 
 else:
     # add intermediate cameras
-    cameras = get_intermediate_cameras(keyframe_cameras, keyframe_world_points, keyframe_image_points, keyframe_idx)
+    cameras = get_intermediate_cameras(keyframe_cameras, keyframe_world_points, keyframe_image_points, keyframe_idx) # TODO keyframes still manipuilated?
 
     # bundle adjustment for each keyframe
     '''
@@ -196,8 +197,8 @@ else:
         opt_points_3d = opt_points_3d + opt_points_3d_tmp
     '''
 
-    start, end = 0, 30
-    axis = get_3d_points_from_ref(cameras[start], start, cameras[32], end)
+    start, end = 0, 32
+    axis = get_3d_points_from_ref(cameras[start], start, cameras[end], end)
 
     # save/show frames
     for i in range(len(cameras)):

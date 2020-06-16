@@ -155,12 +155,21 @@ def prepare_data(cameras, frame_points_3d, frame_points_2d, keyframe_idx):
     camera_id = 0
     pt_id_counter = 0
     for k, pts_2d in enumerate(frame_points_2d):
-        if k != 0:
-            points_2d = np.vstack((points_2d, frame_points_2d[k-1][-1]))
-            points_3d = np.vstack((points_3d, frame_points_3d[k-1][-1]))
-            camera_indices += [camera_id for _ in range(len(frame_points_2d[k-1][-1]))]
-            point_indices += [i for i in range(pt_id_counter, pt_id_counter + len(frame_points_2d[k-1][-1]))]
-            pt_id_counter = pt_id_counter + len(frame_points_2d[k-1][-1])
+        if k > 0:
+            halfway_idx = keyframe_idx[k] - keyframe_idx[k - 1] - 1
+            points_2d = np.vstack((points_2d, frame_points_2d[k-1][halfway_idx]))
+            points_3d = np.vstack((points_3d, frame_points_3d[k-1][halfway_idx]))
+            camera_indices += [camera_id for _ in range(len(frame_points_2d[k-1][halfway_idx]))]
+            point_indices += [i for i in range(pt_id_counter, pt_id_counter + len(frame_points_2d[k-1][halfway_idx]))]
+            pt_id_counter = pt_id_counter + len(frame_points_2d[k-1][halfway_idx])
+
+        if k > 1:
+            end_idx = keyframe_idx[k + 1] - keyframe_idx[k - 1] - 3
+            points_2d = np.vstack((points_2d, frame_points_2d[k-2][end_idx]))
+            points_3d = np.vstack((points_3d, frame_points_3d[k-2][end_idx]))
+            camera_indices += [camera_id for _ in range(len(frame_points_2d[k-2][end_idx]))]
+            point_indices += [i for i in range(pt_id_counter, pt_id_counter + len(frame_points_2d[k-2][end_idx]))]
+            pt_id_counter = pt_id_counter + len(frame_points_2d[k-2][end_idx])
 
         points_2d = np.vstack((points_2d, frame_points_2d[k][0]))
         points_3d = np.vstack((points_3d, frame_points_3d[k][0]))
@@ -201,29 +210,24 @@ def filter_outliers(cameras, points_2d, points_3d, keyframe_idx):
     all_indices = []
     indices = [i for i in range(1000)]
     for i in range(0, len(cameras)):
-        reprojected, _ = cv2.projectPoints(np.asarray(points_3d[i]), cameras[i].R_vec, cameras[i].t, K, dist)
+        reprojected, _ = cv2.projectPoints(np.asarray(points_3d[i][0]), cameras[i].R_vec, cameras[i].t, K, dist)
         reprojected = np.reshape(reprojected, (len(reprojected), 2))
 
-        close_arr = np.isclose(points_2d[i], reprojected, atol=50.0)
+        close_arr = np.isclose(points_2d[i][0], reprojected, atol=50)
 
         current_indices = []
         for j in range(0, len(close_arr)):
             if close_arr[j][0] and close_arr[j][1]:
                 current_indices.append(j)
 
-        indices = np.intersect1d(indices, current_indices)
+        tmp_2d = []
+        tmp_3d = []
+        for k, _ in enumerate(points_2d[i]):
+            tmp_2d.append(points_2d[i][k][current_indices])
+            tmp_3d.append(points_3d[i][k][current_indices])
 
-        if i+1 in keyframe_idx[1:]:
-            all_indices.append(indices)
-            indices = [i for i in range(1000)]
-
-    index = 0
-    for i in range(0, len(cameras)):
-        if i in keyframe_idx[1:]:
-            index += 1
-
-        in_points_2d.append(np.asarray(points_2d[i][all_indices[index]]))
-        in_points_3d.append(np.asarray(points_3d[i][all_indices[index]]))
+        in_points_2d.append(np.asarray(tmp_2d))
+        in_points_3d.append(np.asarray(tmp_3d))
 
     return in_points_3d, in_points_2d
 
@@ -253,7 +257,7 @@ def start_bundle_adjustment(cameras, points3d, points2d, keyframe_idx):
 
     A = bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices)
     t0 = time.time()
-    res = least_squares(get_residuals, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-4, method='trf',
+    res = least_squares(get_residuals, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-5, method='trf',
                         args=(n_cameras, n_points, camera_indices, point_indices, points_2d))
     t1 = time.time()
 

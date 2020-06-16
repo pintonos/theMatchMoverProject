@@ -44,35 +44,16 @@ def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, start_idx):
     for i in range(start_idx[0], start_idx[-1]):
         if i in start_idx:  # keyframe
             j += 1
-            k = 0
+            if j == 0:
+                k = 0  # first keyframe
+            else:
+                k = start_idx[j] - start_idx[j - 1] - 1  # other keyframes
             all_cameras.append(keyframe_cameras[j])
         else:  # intermediate frame
             _, R, t, inliers = cv2.solvePnPRansac(points_3d[j][k], points_2d[j][k], K, dist, reprojectionError=5.0)
             all_cameras.append(Camera(R, t))
             k += 1
-    """
-    for i in range(len(keyframe_cameras)-1):
-        camera_list = []
-        if i != 0:
-            start = start_idx[i] - start_idx[i - 1] - 1
-            end = start_idx[i + 1] - start_idx[i-1] - 2 #len(points_2d[i]) # TODO wrong length...check points_2d list lengths?
-        else:
-            start = 1
-            end = start_idx[1]
-        print(start, end)
-        for j in range(start, end):
-            #_, R, t, inliers = cv2.solvePnPRansac(points_3d[i][j], points_2d[i][j], K, dist, reprojectionError=5.0)
-            camera_list.append(Camera(R, t))
 
-        # keyframe camera
-        all_cameras.append(keyframe_cameras[i])
-        #print(np.isclose(all_cameras[-1].R_mat, keyframe_cameras[i].R_mat))
-
-        # intermediate cameras
-        for k, j in enumerate(range(start, end)):
-            all_cameras.append(camera_list[k])
-            #all_cameras.append(keyframe_cameras[i]) # TODO test why keyframes only better?     
-    """
     return all_cameras
 
 
@@ -109,7 +90,7 @@ def get_3d_points_for_consecutive_frames(points_3d, prev_cam, curr_cam, points_2
 
 reader, writer = get_video_streams()
 
-keyframes_only = True
+keyframes_only = False
 
 start_frame = 0
 end_frame = 100  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))

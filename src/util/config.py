@@ -26,6 +26,7 @@ global dist
 global CALIB_VIDEO_PATH
 global VIDEO_PATH
 global VIDEO_OUT_PATH
+global SHOW_FRAMES
 
 try:
     K = np.load(CAMERA_MATRIX)
@@ -45,6 +46,11 @@ try:
         CALIB_VIDEO_PATH = args['calib_video_path']
         VIDEO_PATH = args['input_video_path']
         VIDEO_OUT_PATH = args['output_video_path']
+
+        try:
+            SHOW_FRAMES = args['show_frames']
+        except:
+            SHOW_FRAMES = False
 
         try:
             if not os.path.exists(CALIB_VIDEO_PATH):

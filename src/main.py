@@ -71,10 +71,13 @@ for i in range(len(cameras)):
     _, img = reader.read()
     points_2d = get_cube_points_from_axis_points(cameras[i], axis)
     draw_cube(img, points_2d)
-    print('show frame:', i)
-    cv2.imshow('normal', cv2.resize(img, (960, 540)))
-    cv2.waitKey(0)
+    print('process frame', i)
+    if SHOW_FRAMES:
+        cv2.imshow('normal', cv2.resize(img, (960, 540)))
+        cv2.waitKey(0)
     writer.write(img)
 
+print('done')
+cv2.destroyAllWindows()
 reader.release()
 writer.release()

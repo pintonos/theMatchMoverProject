@@ -1,6 +1,5 @@
 numpy
 opencv-python
-opencv-contrib-python
 pandas
 scipy
 wget

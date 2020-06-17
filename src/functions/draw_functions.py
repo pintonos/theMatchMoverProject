@@ -11,14 +11,14 @@ Functions to draw points and shapes into an image
 
 def draw_cube(img, pts):
     # bottom
-    cv2.line(img, (pts[0][0], pts[0][1]), (pts[1][0], pts[1][1]), (0, 255, 0), 2)
+    cv2.line(img, (pts[0][0], pts[0][1]), (pts[1][0], pts[1][1]), (255, 0, 0), 2)
     cv2.line(img, (pts[0][0], pts[0][1]), (pts[2][0], pts[2][1]), (0, 255, 0), 2)
     cv2.line(img, (pts[1][0], pts[1][1]), (pts[6][0], pts[6][1]), (0, 255, 0), 2)
-    cv2.line(img, (pts[2][0], pts[2][1]), (pts[6][0], pts[6][1]), (0, 255, 0), 2)
+    cv2.line(img, (pts[2][0], pts[2][1]), (pts[6][0], pts[6][1]), (255, 0, 0), 2)
     # top
-    cv2.line(img, (pts[3][0], pts[3][1]), (pts[4][0], pts[4][1]), (255, 0, 0), 2)
+    cv2.line(img, (pts[3][0], pts[3][1]), (pts[4][0], pts[4][1]), (0, 255, 0), 2)
     cv2.line(img, (pts[3][0], pts[3][1]), (pts[5][0], pts[5][1]), (255, 0, 0), 2)
-    cv2.line(img, (pts[5][0], pts[5][1]), (pts[7][0], pts[7][1]), (255, 0, 0), 2)
+    cv2.line(img, (pts[5][0], pts[5][1]), (pts[7][0], pts[7][1]), (0, 255, 0), 2)
     cv2.line(img, (pts[4][0], pts[4][1]), (pts[7][0], pts[7][1]), (255, 0, 0), 2)
     # connections
     cv2.line(img, (pts[0][0], pts[0][1]), (pts[3][0], pts[3][1]), (0, 0, 255), 2)

@@ -14,7 +14,7 @@ def get_video_streams():
     frame_height = int(video.get(4))
 
     # Define the codec and create VideoWriter object
-    fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
     out = cv2.VideoWriter(VIDEO_OUT_PATH, fourcc, 20.0, (frame_width, frame_height))
     return video, out
 

@@ -2,6 +2,7 @@ import os
 import wget
 import sys
 import numpy as np
+import logging
 
 """ 
 Contains project config
@@ -47,30 +48,30 @@ try:
         VIDEO_PATH = args['input_video_path']
         VIDEO_OUT_PATH = args['output_video_path']
 
-        try:
-            SHOW_FRAMES = args['show_frames']
-        except:
-            SHOW_FRAMES = False
+        SHOW_FRAMES = args.get('show_frames', 'False')
+
+        verb = args.get('logging', logging.ERROR)
+        logging.basicConfig(level=verb)
 
         try:
             if not os.path.exists(CALIB_VIDEO_PATH):
                 CALIB_VIDEO_URL = args['calib_video_url']
-                print('WARN: calibration video missing, downloading...')
+                logging.warning('calibration video missing, downloading...')
                 wget.download(CALIB_VIDEO_URL, CALIB_VIDEO_PATH)
         except:
-            print('ERROR: no calibration video found, auto download failed')
+            logging.error('no calibration video found, auto download failed')
             sys.exit(-1)
 
         try:
             if not os.path.exists(VIDEO_PATH):
                 VIDEO_URL = args['input_video_url']
-                print('WARN: input video missing, downloading...')
+                logging.warning('input video missing, downloading...')
                 wget.download(VIDEO_URL, VIDEO_PATH)
         except:
-            print('ERROR: no input video found, auto download failed')
+            logging.warning('no input video found, auto download failed')
             sys.exit(-1)
 
 
 except IOError:
-    print('ERROR: default.conf is missing or invalid.')
+    logging.error('default.conf is missing or invalid.')
     sys.exit(-1)

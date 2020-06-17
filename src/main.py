@@ -1,6 +1,7 @@
 from functions import *
 from util import helper
 import cv2
+import logging
 
 
 reader, writer = helper.get_video_streams()
@@ -11,7 +12,7 @@ end_frame = 100  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 keyframes, keyframe_idx = load_keyframes(start_frame, end_frame)
 keyframe_pts = get_keyframe_pts(keyframes)
 
-print('found keyframes at positions:', keyframe_idx)
+logging.info('found keyframes at positions: {0}'.format(keyframe_idx))
 
 # get cameras P0 and P2
 R0, t0 = np.identity(3), np.asarray([0, 0, 0], dtype=float)  # init position and orientation
@@ -33,7 +34,7 @@ keyframe_world_points = [points_3d]
 keyframe_image_points = [points_2d]
 
 # start resectioning
-print('get keyframe cameras ...')
+logging.info('get keyframe cameras ...')
 for i in range(2, len(keyframe_pts) + 1):  # start iterating at camera P1
 
     halfway_idx = keyframe_idx[i - 1] - keyframe_idx[i - 2]
@@ -47,7 +48,7 @@ for i in range(2, len(keyframe_pts) + 1):  # start iterating at camera P1
     # get next camera by resectioning from previous and current camera
     points_3d = triangulate_points(prev_cam.R_mat, prev_cam.t, curr_cam.R_mat, curr_cam.t, pts1, pts2, dist, K)
     _, R, t, inliers = cv2.solvePnPRansac(points_3d, keyframe_pts[i-2][-1], K, dist, reprojectionError=2.0)
-    print(i, '\t', len(inliers))
+    logging.info('{0} inliers in keyframe {1}'.format(len(inliers), i))
 
     # filter points with inliers list
     points_3d, points_2d = get_inlier_points(points_3d, keyframe_pts[i-2], inliers)
@@ -71,13 +72,13 @@ for i in range(len(cameras)):
     _, img = reader.read()
     points_2d = get_cube_points_from_axis_points(cameras[i], axis)
     draw_cube(img, points_2d)
-    print('process frame', i)
-    if SHOW_FRAMES is True:
+    logging.info('process frame {0}'.format(i))
+    if SHOW_FRAMES == 'True':
         cv2.imshow('normal', cv2.resize(img, (960, 540)))
         cv2.waitKey(0)
     writer.write(img)
 
-print('done')
+logging.info('done')
 cv2.destroyAllWindows()
 reader.release()
 writer.release()

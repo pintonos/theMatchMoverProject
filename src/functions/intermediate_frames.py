@@ -1,8 +1,9 @@
 from util import *
+import logging
 
 
 def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, start_idx):
-    print('get intermediate cameras ...')
+    logging.info('get intermediate cameras ...')
     all_cameras = []
 
     j = -1  # keyframe index

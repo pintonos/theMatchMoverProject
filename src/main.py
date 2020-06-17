@@ -1,5 +1,6 @@
 from functions import *
 from util import helper
+import numpy as np
 import cv2
 
 
@@ -15,8 +16,12 @@ print('found keyframes at positions:', keyframe_idx)
 
 # get cameras P0 and P2
 R0, t0 = np.identity(3), np.asarray([0, 0, 0], dtype=float)  # init position and orientation
-R2, t2 = get_R_and_t(keyframe_pts[0][0], keyframe_pts[0][-1], K)
+svd = get_R_and_t(keyframe_pts[0][0], keyframe_pts[0][-1], K)
+points_3d_0 = triangulate_points(R0, t0, svd[0], svd[2], keyframe_pts[0][0], keyframe_pts[0][-1], dist, K)
+
+R2, t2 = get_front_of_camera(svd, K, points_3d_0)
 points_3d_0 = triangulate_points(R0, t0, R2, t2, keyframe_pts[0][0], keyframe_pts[0][-1], dist, K)
+
 
 # compute P1 (halfway between P0 and P2)
 halfway_idx = keyframe_idx[1] - keyframe_idx[0]

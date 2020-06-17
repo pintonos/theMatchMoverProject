@@ -5,27 +5,60 @@ import numpy as np
 """
 
 
+def get_P(R, t, K):
+    Rt = np.c_[R, t]
+    return np.dot(K, Rt)
+
+
+def get_front_of_camera(svd, K, points_3d):
+    R1 = svd[0]
+    R2 = svd[1]
+    t = svd[2]
+
+    P1 = get_P(R1, t, K)
+    P2 = get_P(R2, t, K)
+
+    p1_pos_checks = 0
+    p2_pos_checks = 0
+    for point_3d in points_3d:
+        point_3d_hom = np.append(point_3d, np.asarray([1])).reshape(4, 1)
+
+        w1 = np.matmul(P1, point_3d_hom)[2]
+        M1 = np.delete(P1, np.s_[-1], axis=1)
+
+        w2 = np.matmul(P2, point_3d_hom)[2]
+        M2 = np.delete(P2, np.s_[-1], axis=1)
+
+        if w1 * np.linalg.det(M1) > 0:
+            p1_pos_checks += 1
+
+        if w2 * np.linalg.det(M2) > 0:
+            p2_pos_checks += 1
+
+    if p1_pos_checks >= p2_pos_checks:
+        R = R1
+    else:
+        R = R2
+
+    # sanity check for R
+    if not np.isclose(np.linalg.det(R), 1.0, atol=1.e-5):
+        raise Exception('det(R) != 1, instead it is:', np.linalg.det(R))
+    return R, t
+
+
 def get_F(pts1, pts2):
-    F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.RANSAC, 4, 0.999)
+    F, _ = cv2.findFundamentalMat(pts1, pts2, cv2.RANSAC, 4, 0.999)
     F = F/np.linalg.norm(F)
-    return F, mask
+    return F
 
 
 def get_E_from_F(pts1, pts2, K):
     # Get fundamental Matrix
-    F, mask = get_F(pts1, pts2)
+    F, _ = get_F(pts1, pts2)
 
     # Compute E from F
     E = np.dot(np.dot(np.transpose(K), F), K)
-    return E, mask
-
-
-def filter_pts(pts1, pts2, mask):
-    pts1_in = [pt for (pt, m) in zip(pts1, mask) if m[0] != 0]
-    pts2_in = [pt for (pt, m) in zip(pts2, mask) if m[0] != 0]
-    pts1 = np.reshape(pts1_in, (1, len(pts1_in), 2))
-    pts2 = np.reshape(pts2_in, (1, len(pts2_in), 2))
-    return pts1, pts2
+    return E
 
 
 def get_R_and_t(pts1, pts2, K, compute_with_f=False):
@@ -35,30 +68,19 @@ def get_R_and_t(pts1, pts2, K, compute_with_f=False):
     reference: https://stackoverflow.com/questions/33906111/how-do-i-estimate-positions-of-two-cameras-in-opencv
     """
 
-    E = mask = None
+    E = None
     if compute_with_f:  # compute essential matrix via fundamental matrix
-        E, mask = get_E_from_F(pts1, pts2, K)
+        E = get_E_from_F(pts1, pts2, K)
     else:  # find essential matrix directly
-        E, mask = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=0.1, cameraMatrix=K)
+        E, _ = cv2.findEssentialMat(pts1, pts2, method=cv2.RANSAC, prob=0.999, threshold=0.1, cameraMatrix=K)
 
     # sanity check for E
     if not np.isclose(np.linalg.det(E), 0.0, atol=1.e-3):
         raise Exception('det(E) != 0, instead it is:', np.linalg.det(E))
 
-    # filter outliers
-    pts1, pts2 = filter_pts(pts1, pts2, mask)
+    svd = cv2.decomposeEssentialMat(E)
 
-    # refine mapping
-    pts1, pts2 = cv2.correctMatches(E, pts1, pts2)
-
-    # Recover relative camera rotation and translation from E and the corresponding points
-    points, R, t, _ = cv2.recoverPose(E, pts1, pts2, K)
-
-    # sanity check for R
-    if not np.isclose(np.linalg.det(R), 1.0, atol=1.e-5):
-        raise Exception('det(R) != 1, instead it is:', np.linalg.det(R))
-
-    return R, t
+    return svd
 
 
 def triangulate_points(R1, t1, R2, t2, ref_pts1, ref_pts2, dist, K):

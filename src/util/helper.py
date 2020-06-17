@@ -45,7 +45,7 @@ def correct_matches(points, halfway_idx):
     if halfway_idx >= len(points):
         return None, None
 
-    F, _ = get_F(points[0], points[-1])
+    F = get_F(points[0], points[-1])
 
     pts1 = np.reshape(points[0], (1, len(points[0]), 2))
     pts2 = np.reshape(points[halfway_idx], (1, len(points[halfway_idx]), 2))

@@ -1,0 +1,3 @@
+calib_video_path=../resources/data/visual-geometry-calibration.MTS
+input_video_path=../resources/data/visual-geometry-video3.MTS
+output_video_path=../resources/data/output.avi

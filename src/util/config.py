@@ -10,15 +10,15 @@ Paths for INTERMEDIATE files
 """
 
 # Temporary file paths
-DATA_PATH = '../resources/data/'
-KEYFRAMES_PATH = DATA_PATH + 'keyframes.npy'
-KEYFRAMES_IDX_PATH = DATA_PATH + 'keyframe_idx.npy'
-CAMERA_MATRIX = DATA_PATH + 'cmatrix.npy'
-CAMERA_DIST_COEFF = DATA_PATH + 'dist.npy'
+DATA_PATH = os.path.join('..', 'resources', 'data')
+KEYFRAMES_PATH = os.path.join(DATA_PATH, 'keyframes.npy')
+KEYFRAMES_IDX_PATH = os.path.join(DATA_PATH, 'keyframe_idx.npy')
+CAMERA_MATRIX = os.path.join(DATA_PATH, 'cmatrix.npy')
+CAMERA_DIST_COEFF = os.path.join(DATA_PATH, 'dist.npy')
 CONFIG_PATH = 'default.conf'
 
 # template CSV file path
-REF_POINTS = DATA_PATH + 'reference_{frame}.csv'
+REF_POINTS = os.path.join(DATA_PATH, 'reference_points', 'reference_{frame}.csv')
 
 # define global variables
 global K

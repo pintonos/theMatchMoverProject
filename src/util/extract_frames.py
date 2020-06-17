@@ -30,8 +30,9 @@ if img_1 is None or img_2 is None:
 cv2.imwrite('../' + DATA_PATH + 'img_' + str(frame_1) + '.jpg', img_1)
 cv2.imwrite('../' + DATA_PATH + 'img_' + str(frame_2) + '.jpg', img_2)
 
-cv2.imshow('img_' + str(frame_1), cv2.resize(img_1, DEMO_RESIZE))
-cv2.imshow('img_' + str(frame_2), cv2.resize(img_2, DEMO_RESIZE))
+size = (960, 540)
+cv2.imshow('img_' + str(frame_1), cv2.resize(img_1, size))
+cv2.imshow('img_' + str(frame_2), cv2.resize(img_2, size))
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()

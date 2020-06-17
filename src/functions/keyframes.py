@@ -1,5 +1,7 @@
-from functions import *
-from util import *
+from functions import matcher_functions
+from util import helper
+from util import models
+import numpy as np
 
 MIN_MATCHES = 350
 
@@ -14,7 +16,7 @@ def find_next_key_frame(idx1, idx2):
         startPoint is the 2DPoint of the first frame, endPoint is the 2DPoint of the last frame
     """
 
-    video, _ = get_video_streams()
+    video, _ = helper.get_video_streams()
     if idx2 - idx1 <= 0:
         print("warning, called find_trace_points with 0 or negative frame indexes")
         return []
@@ -35,7 +37,7 @@ def find_next_key_frame(idx1, idx2):
             continue
 
         # trace
-        match_points_1, match_points_2, matches = get_points(prev_frame, frame, detector=Detector.SURF)
+        match_points_1, match_points_2, matches = matcher_functions.get_points(prev_frame, frame, detector=models.Detector.ORB)
 
         if traced_matches is None:
             traced_matches = [{

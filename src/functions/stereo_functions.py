@@ -5,18 +5,6 @@ import numpy as np
 """
 
 
-def invert(R, t):
-    back_rotation = np.c_[R, t]
-    back_rotation = np.append(back_rotation, [[0, 0, 0, 1]], axis=0)
-
-    # More explanation at https://answers.opencv.org/question/31421/opencv-3-essentialmatrix-and-recoverpose/
-    back_rotation = np.linalg.inv(back_rotation)
-
-    R_inv = back_rotation[np.ix_([0, 1, 2], [0, 1, 2])]
-    t_inv = back_rotation[:, 3][:-1].reshape(3, 1)
-    return R_inv, t_inv
-
-
 def get_F(pts1, pts2):
     F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.RANSAC, 4, 0.999)
     F = F/np.linalg.norm(F)
@@ -41,7 +29,11 @@ def filter_pts(pts1, pts2, mask):
 
 
 def get_R_and_t(pts1, pts2, K, compute_with_f=False):
-    # More explanation at https://stackoverflow.com/questions/33906111/how-do-i-estimate-positions-of-two-cameras-in-opencv
+    """
+    get R and t from essential matrix E
+
+    reference: https://stackoverflow.com/questions/33906111/how-do-i-estimate-positions-of-two-cameras-in-opencv
+    """
 
     E = mask = None
     if compute_with_f:  # compute essential matrix via fundamental matrix
@@ -70,8 +62,12 @@ def get_R_and_t(pts1, pts2, K, compute_with_f=False):
 
 
 def triangulate_points(R1, t1, R2, t2, ref_pts1, ref_pts2, dist, K):
-    # undistort ref points
-    # second answer: https://stackoverflow.com/questions/16295551/how-to-correctly-use-cvtriangulatepoints/16299909
+    """
+    triangulate points
+
+    reference: https://stackoverflow.com/questions/16295551/how-to-correctly-use-cvtriangulatepoints/16299909
+    """
+
     pts_l_norm = cv2.undistortPoints(np.expand_dims(ref_pts1, axis=1).astype(dtype=np.float32), cameraMatrix=K,
                                      distCoeffs=dist)
     pts_r_norm = cv2.undistortPoints(np.expand_dims(ref_pts2, axis=1).astype(dtype=np.float32), cameraMatrix=K,

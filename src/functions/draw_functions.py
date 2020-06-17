@@ -1,11 +1,11 @@
-import functools
-import operator
-
+from functions import *
 from util import *
 import pandas as pd
-from functions import *
+import cv2
+import numpy as np
 
-""" Functions to draw points and shapes into an image
+""" 
+Functions to draw points and shapes into an image
 """
 
 
@@ -15,7 +15,6 @@ def draw_cube(img, pts):
     cv2.line(img, (pts[0][0], pts[0][1]), (pts[2][0], pts[2][1]), (0, 255, 0), 2)
     cv2.line(img, (pts[1][0], pts[1][1]), (pts[6][0], pts[6][1]), (0, 255, 0), 2)
     cv2.line(img, (pts[2][0], pts[2][1]), (pts[6][0], pts[6][1]), (0, 255, 0), 2)
-    #cv2.drawContours(img, [np.asarray([(pts[0][0], pts[0][1]), (pts[1][0], pts[1][1]), (pts[0][0], pts[0][1]), (pts[2][0], pts[2][1]), (pts[1][0], pts[1][1]), (pts[6][0], pts[6][1]), (pts[2][0], pts[2][1]), (pts[6][0], pts[6][1])])], -1, (0, 255, 0), -3)
     # top
     cv2.line(img, (pts[3][0], pts[3][1]), (pts[4][0], pts[4][1]), (255, 0, 0), 2)
     cv2.line(img, (pts[3][0], pts[3][1]), (pts[5][0], pts[5][1]), (255, 0, 0), 2)
@@ -26,27 +25,6 @@ def draw_cube(img, pts):
     cv2.line(img, (pts[2][0], pts[2][1]), (pts[4][0], pts[4][1]), (0, 0, 255), 2)
     cv2.line(img, (pts[6][0], pts[6][1]), (pts[7][0], pts[7][1]), (0, 0, 255), 2)
     cv2.line(img, (pts[1][0], pts[1][1]), (pts[5][0], pts[5][1]), (0, 0, 255), 2)
-
-
-def draw_axis(img, points):
-    points = np.int32(points).reshape(-1, 2)
-    cv2.line(img, tuple(points[0]), tuple(points[1]), (255, 0, 0), 3)
-    cv2.line(img, tuple(points[0]), tuple(points[2]), (0, 255, 0), 3)
-    cv2.line(img, tuple(points[0]), tuple(points[3]), (0, 0, 255), 3)
-
-
-def draw_points(img, pts, i_init=0):
-    for i, pt in enumerate(pts):
-        cv2.circle(img, (pt[0], pt[1]), 3, (255, 0, 0), -1)
-        cv2.putText(img, str(i + i_init), (pt[0], pt[1]), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 1)
-
-
-def draw_keyframe_inliers(start_idx, inliers_2d):
-    for i, keyframe_id in enumerate(start_idx[1:]):
-        img = get_frame(keyframe_id)
-        draw_points(img, functools.reduce(operator.iconcat, inliers_2d[i].astype(int).tolist(), []))
-        cv2.imshow('normal', cv2.resize(img, DEMO_RESIZE))
-        cv2.waitKey(0)
 
 
 def get_cube_points_from_axis_points(camera, axis_points):
@@ -87,33 +65,10 @@ def get_cube_points_from_axis_points(camera, axis_points):
     return drawpoints
 
 
-def get_P(R, t, K):
-    Rt = np.c_[R, t]
-    return np.dot(K, Rt)
-
-
-def get_3d_axis(camera_start, start, camera_end, end):
-    pts1 = pd.read_csv(REF_POINTS.format(frame=str(start)), sep=',', header=None, dtype=float).values
-    pts2 = pd.read_csv(REF_POINTS.format(frame=str(end)), sep=',', header=None, dtype=float).values
-
-    P1 = get_P(camera_start.R_mat, camera_start.t, K)
-    P2 = get_P(camera_end.R_mat, camera_end.t, K)
-
-    object_points = []
-
-    for p1, p2 in list(zip(pts1, pts2)):
-        ret = cv2.triangulatePoints(P1, P2, np.array([p1[0], p1[1]]), np.array([p2[0], p2[1]]))
-        object_points.append(ret)
-    object_points = cv2.convertPointsFromHomogeneous(np.array(object_points))
-
-    return object_points
-
 def get_3d_points_from_ref(camera_start, start, camera_end, end):
     pts1 = pd.read_csv(REF_POINTS.format(frame=str(start)), sep=',', header=None, dtype=float).values
     pts2 = pd.read_csv(REF_POINTS.format(frame=str(end)), sep=',', header=None, dtype=float).values
 
-    # undistort ref points
-    # second answer: https://stackoverflow.com/questions/16295551/how-to-correctly-use-cvtriangulatepoints/16299909
     pts_l_norm = cv2.undistortPoints(np.expand_dims(pts1, axis=1).astype(dtype=np.float32), cameraMatrix=K,
                                      distCoeffs=dist)
     pts_r_norm = cv2.undistortPoints(np.expand_dims(pts2, axis=1).astype(dtype=np.float32), cameraMatrix=K,

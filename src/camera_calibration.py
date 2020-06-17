@@ -5,6 +5,18 @@ from util import *
 Will calculate camera matrix and distortion coefficient
 """
 
+CALIBR_BOARD_SHAPE = (8, 6)
+CALIBR_SQUARE_SIZE_MM = 25
+CRITERIA = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, CALIBR_SQUARE_SIZE_MM, 0.001)
+
+
+def get_obj_point_structure():
+    """Prepare object points dependant of BOARD_SIZE"""
+    object_points = np.zeros((CALIBR_BOARD_SHAPE[0] * CALIBR_BOARD_SHAPE[1], 3), np.float32)
+    object_points[:, :2] = np.mgrid[0:CALIBR_BOARD_SHAPE[0], 0:CALIBR_BOARD_SHAPE[1]].T.reshape(-1, 2)
+    return object_points
+
+
 SAVE = False  # Save results to disk
 N_TH_FRAME_TO_USE = 3  # use only every n-th frame for calibration
 

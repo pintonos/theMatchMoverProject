@@ -42,16 +42,22 @@ The default configuration is sufficient to run the code and will download the ex
 We provide a **Jupyter notebook**, to test the code without the need to install any dependencies:
 [https://colab.research.google.com/drive/1iBBZnpQBInIY_H4Xb1wP-FdoRGKzCoxQ?usp=sharing](https://colab.research.google.com/drive/1iBBZnpQBInIY_H4Xb1wP-FdoRGKzCoxQ?usp=sharing)
 
+Commands are executed from the `src/` directory.
+
 To run the **quick demo**, simply call
 ```
-python src/main.py
+python main.py
 ```
 
 All intermediate results are already provided to enable a fast demo.
 
+The default output can be found at `resources/data/output.avi`
+
+---
+
 To re-run the **calibration procedure**, call
 ```
-python src/camera_calibration.py
+python camera_calibration.py
 ```
 
 To re-run the **frame-by-frame keypoint analysis**, remove or rename the following files

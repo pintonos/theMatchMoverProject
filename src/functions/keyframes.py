@@ -37,7 +37,8 @@ def find_next_key_frame(idx1, idx2):
             continue
 
         # trace
-        match_points_1, match_points_2, matches = matcher_functions.get_points(prev_frame, frame, detector=models.Detector.ORB)
+        match_points_1, match_points_2, matches = \
+            matcher_functions.detect_and_match_keypoints(prev_frame, frame, detector=models.Detector.ORB)
 
         if traced_matches is None:
             traced_matches = [{

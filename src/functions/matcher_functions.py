@@ -14,11 +14,6 @@ in order to perform a stereo calibration.
 def lowes_ratio_test(kp1, kp2, matches, threshold=0.8):
     """
     Ratio test as per Lowe's paper.
-    :param threshold: threshold to compare matches
-    :param kp1: keypoints image 1
-    :param kp2: keypoints image 2
-    :param matches: matches between images
-    :return: good matches
     """
     pts1 = []
     pts2 = []
@@ -36,6 +31,9 @@ def lowes_ratio_test(kp1, kp2, matches, threshold=0.8):
 
 
 def get_flann_matches(kp1, des1, kp2, des2, detector):
+    """
+    Computes matches between keypoints with FLANN algorithm. Filters matches with Lowe's ratio test.
+    """
     index_params = None
 
     # FLANN parameters
@@ -62,7 +60,11 @@ def get_flann_matches(kp1, des1, kp2, des2, detector):
 
 
 def get_brute_force_matches(kp1, des1, kp2, des2, detector, ratio_test=True):
-
+    """
+    Computes matches between keypoints with BF algorithm.
+    :param ratio_test defines how matches should be validated. If ratio_test is True, the matches are checked with
+    Lowe's ratio test. Otherwise, the matches are sorted and the worst (half of the list) are dropped.
+    """
     if detector == models.Detector.ORB:
         bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=not ratio_test)
     else:
@@ -90,8 +92,13 @@ def get_brute_force_matches(kp1, des1, kp2, des2, detector, ratio_test=True):
     return np.int32(pts1), np.int32(pts2), good_matches
 
 
-def get_points(img1, img2, detector=models.Detector.ORB, filtered=True, matcher=models.Matcher.BRUTE_FORCE, show_matches=False):
-
+def detect_and_match_keypoints(img1, img2, detector=models.Detector.ORB, filtered=True,
+                               matcher=models.Matcher.BRUTE_FORCE, show_matches=False):
+    """
+    Detects, matches and filters keypoints between two images.
+    :param detector The keypoint detector (SIFT, SURF, FAST, ORB)
+    :param matcher The keypoint matcher (BRUTE_FORCE, FLANN)
+    """
     gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
     gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
 

@@ -20,7 +20,6 @@ Although the code should also run on different versions, we exclusively guarante
 
 - `numpy 1.18.4`
 - `opencv-python 4.2.0.34`
-- `opencv-contrib-python  4.2.0.34`
 - `pandas 1.0.3`
 - `scipy 1.4.1`
 - `wget 3.2`
@@ -62,7 +61,6 @@ python camera_calibration.py
 
 To re-run the **frame-by-frame keypoint analysis**, remove or rename the following files
 - `keyframes.npy`
-- `keyframe_pts.npy`
 - `keyframe_idx.npy`
 
 ## Report

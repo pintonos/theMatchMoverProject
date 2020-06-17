@@ -69,6 +69,12 @@ A full work report, including our methods and chosen parameters can be found at
 
 TODO
 
+## Preview
+
+![1.png](resources/1.png)
+![2.png](resources/2.png)
+![3.png](resources/3.png)
+
 ### Used tutorials and sources
 - https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_calib3d/py_calibration/py_calibration.html
 - https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_calib3d/py_pose/py_pose.html

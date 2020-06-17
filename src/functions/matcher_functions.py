@@ -1,6 +1,7 @@
 from functions import *
-from util import *
+from util import models
 from matplotlib import pyplot as plt
+import cv2
 
 """ 
 Functions required for automatic point matching
@@ -77,7 +78,7 @@ def get_flann_matches(kp1, des1, kp2, des2, detector):
 
 def get_brute_force_matches(kp1, des1, kp2, des2, detector, ratio_test=True):
 
-    if detector == Detector.ORB:
+    if detector == models.Detector.ORB:
         bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=not ratio_test)
     else:
         bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=not ratio_test)
@@ -104,7 +105,7 @@ def get_brute_force_matches(kp1, des1, kp2, des2, detector, ratio_test=True):
     return np.int32(pts1), np.int32(pts2), good_matches
 
 
-def get_points(img1, img2, detector=Detector.ORB, filtered=True, matcher=Matcher.BRUTE_FORCE, show_matches=False):
+def get_points(img1, img2, detector=models.Detector.ORB, filtered=True, matcher=models.Matcher.BRUTE_FORCE, show_matches=False):
 
     gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
     gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
@@ -117,20 +118,20 @@ def get_points(img1, img2, detector=Detector.ORB, filtered=True, matcher=Matcher
     # Find the keypoints and descriptors
     kp1, kp2 = None, None
     des1, des2 = None, None
-    if detector == Detector.SIFT:
+    if detector == models.Detector.SIFT:
         sift = cv2.xfeatures2d.SIFT_create()
         kp1, des1 = sift.detectAndCompute(gray1, None)
         kp2, des2 = sift.detectAndCompute(gray2, None)
-    elif detector == Detector.SURF:
+    elif detector == models.Detector.SURF:
         surf = cv2.xfeatures2d.SURF_create()
         kp1, des1 = surf.detectAndCompute(gray1, None)
         kp2, des2 = surf.detectAndCompute(gray2, None)
-    elif detector == Detector.FAST:
+    elif detector == models.Detector.FAST:
         fast = cv2.FastFeatureDetector_create()
         sift = cv2.xfeatures2d.SIFT_create()
         kp1, des1 = sift.compute(gray1, fast.detect(gray1, None))
         kp2, des2 = sift.compute(gray2, fast.detect(gray2, None))
-    elif detector == Detector.ORB:
+    elif detector == models.Detector.ORB:
         orb = cv2.ORB_create(nfeatures=2000, scaleFactor=1.5)
         kp1, des1 = orb.detectAndCompute(gray1, None)
         kp2, des2 = orb.detectAndCompute(gray2, None)
@@ -140,9 +141,9 @@ def get_points(img1, img2, detector=Detector.ORB, filtered=True, matcher=Matcher
 
     # Match points
     pts1, pts2, matches = None, None, None
-    if matcher == Matcher.FLANN:
+    if matcher == models.Matcher.FLANN:
         pts1, pts2, matches = get_flann_matches(kp1, des1, kp2, des2, detector)
-    elif matcher == Matcher.BRUTE_FORCE:
+    elif matcher == models.Matcher.BRUTE_FORCE:
         pts1, pts2, matches = get_brute_force_matches(kp1, des1, kp2, des2, detector)
 
     if pts1 is None or pts2 is None:

@@ -23,10 +23,11 @@ Although the code should also run on different versions, we exclusively guarante
 - `opencv-contrib-python  4.2.0.34`
 - `pandas 1.0.3`
 - `scipy 1.4.1`
+- `wget 3.2`
 
 They can be easily checked and installed via
 ```
-pip install -r requirements.txt
+pip install -r src/requirements.txt
 ```
 
 

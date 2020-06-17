@@ -1,3 +1,6 @@
+import os
+import wget
+import sys
 import numpy as np
 
 """ 
@@ -12,7 +15,7 @@ KEYFRAMES_PATH = DATA_PATH + 'keyframes.npy'
 KEYFRAMES_IDX_PATH = DATA_PATH + 'keyframe_idx.npy'
 CAMERA_MATRIX = DATA_PATH + 'cmatrix.npy'
 CAMERA_DIST_COEFF = DATA_PATH + 'dist.npy'
-CONFIG_PATH = 'config.txt'
+CONFIG_PATH = 'default.conf'
 
 # template CSV file path
 REF_POINTS = DATA_PATH + 'reference_{frame}.csv'
@@ -42,9 +45,26 @@ try:
         CALIB_VIDEO_PATH = args['calib_video_path']
         VIDEO_PATH = args['input_video_path']
         VIDEO_OUT_PATH = args['output_video_path']
+
+        try:
+            if not os.path.exists(CALIB_VIDEO_PATH):
+                CALIB_VIDEO_URL = args['calib_video_url']
+                print('WARN: calibration video missing, downloading...')
+                wget.download(CALIB_VIDEO_URL, CALIB_VIDEO_PATH)
+        except:
+            print('ERROR: no calibration video found, auto download failed')
+            sys.exit(-1)
+
+        try:
+            if not os.path.exists(VIDEO_PATH):
+                VIDEO_URL = args['input_video_url']
+                print('WARN: input video missing, downloading...')
+                wget.download(VIDEO_URL, VIDEO_PATH)
+        except:
+            print('ERROR: no input video found, auto download failed')
+            sys.exit(-1)
+
+
 except IOError:
-    print('ERROR: Config.txt is missing or invalid.')
-    exit(-1)
-
-
-
+    print('ERROR: default.conf is missing or invalid.')
+    sys.exit(-1)

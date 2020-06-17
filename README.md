@@ -62,7 +62,6 @@ python camera_calibration.py
 
 To re-run the **frame-by-frame keypoint analysis**, remove or rename the following files
 - `keyframes.npy`
-- `keyframe_pts.npy`
 - `keyframe_idx.npy`
 
 ## Report

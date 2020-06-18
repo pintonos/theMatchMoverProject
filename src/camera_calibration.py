@@ -20,7 +20,7 @@ def get_obj_point_structure():
 
 
 SAVE = False  # Save results to disk
-N_TH_FRAME_TO_USE = 20  # use only every n-th frame for calibration
+N_TH_FRAME_TO_USE = 3  # use only every n-th frame for calibration
 
 point_structure = get_obj_point_structure()
 

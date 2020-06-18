@@ -1,6 +1,7 @@
 from util import *
 
-''' Calibrate camera with calibration video
+'''
+Calibrate camera with calibration video
 Will calculate camera matrix and distortion coefficient
 '''
 
@@ -10,16 +11,16 @@ CRITERIA = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, CALIBR_SQUARE_SI
 
 
 def get_obj_point_structure():
-    '''
+    """
     Prepare object points dependant of BOARD_SIZE
-    '''
+    """
     object_points = np.zeros((CALIBR_BOARD_SHAPE[0] * CALIBR_BOARD_SHAPE[1], 3), np.float32)
     object_points[:, :2] = np.mgrid[0:CALIBR_BOARD_SHAPE[0], 0:CALIBR_BOARD_SHAPE[1]].T.reshape(-1, 2)
     return object_points
 
 
 SAVE = False  # Save results to disk
-N_TH_FRAME_TO_USE = 3  # use only every n-th frame for calibration
+N_TH_FRAME_TO_USE = 20  # use only every n-th frame for calibration
 
 point_structure = get_obj_point_structure()
 
@@ -69,8 +70,8 @@ logging.info('Video processing completed, calculating calibration matrix...')
 
 # Calibrate camera
 gray = cv2.cvtColor(demo_img, cv2.COLOR_BGR2GRAY)
-logging.info(obj_points_3d)
-logging.info(img_points_2d)
+logging.debug(obj_points_3d)
+logging.debug(img_points_2d)
 
 ret, mtx, dist_tmp, rvecs, tvecs = cv2.calibrateCamera(obj_points_3d, img_points_2d, gray.shape[::-1], None, None)
 
@@ -81,7 +82,7 @@ camera_mtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist_tmp, (w, h), 1, (w, h)
 if SAVE:
     np.save(CAMERA_DIST_COEFF, dist_tmp)
     np.save(CAMERA_MATRIX, camera_mtx)
-logging.info('Camera matrix: {}'.format(camera_mtx))
+logging.info('Camera matrix: {}'.format(str(camera_mtx)))
 
 # Calculate mean error
 mean_error = 0

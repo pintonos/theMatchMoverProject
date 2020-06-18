@@ -4,7 +4,7 @@ import sys
 import numpy as np
 import logging
 
-''' 
+'''
 Contains project config
 Paths for INPUT and OUTPUT video files
 Paths for INTERMEDIATE files
@@ -60,7 +60,7 @@ try:
                 CALIB_VIDEO_URL = args['calib_video_url']
                 logging.warning('calibration video missing, downloading...')
                 wget.download(CALIB_VIDEO_URL, CALIB_VIDEO_PATH)
-        except:
+        except Exception as e:
             logging.error('no calibration video found, auto download failed')
             sys.exit(-1)
 
@@ -69,8 +69,8 @@ try:
                 VIDEO_URL = args['input_video_url']
                 logging.warning('input video missing, downloading...')
                 wget.download(VIDEO_URL, VIDEO_PATH)
-        except:
-            logging.warning('no input video found, auto download failed')
+        except Exception as e:
+            logging.error('no input video found, auto download failed')
             sys.exit(-1)
 except IOError:
     logging.error('default.conf is missing or invalid.')

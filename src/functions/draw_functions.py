@@ -2,7 +2,7 @@ import pandas as pd
 
 from util import *
 
-''' 
+'''
 Functions to draw points and shapes into an image
 '''
 

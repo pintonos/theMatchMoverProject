@@ -11,10 +11,10 @@ Reference: https://scipy-cookbook.readthedocs.io/items/bundle_adjustment.html
 
 
 def rotate(points, rot_vecs):
-    '''
+    """
     Rotate points by given rotation vectors.
     Rodrigues' rotation formula is used.
-    '''
+    """
     theta = np.linalg.norm(rot_vecs, axis=1)[:, np.newaxis]
     with np.errstate(invalid='ignore'):
         v = rot_vecs / theta
@@ -27,9 +27,9 @@ def rotate(points, rot_vecs):
 
 
 def project(points, camera_params):
-    '''
+    """
     Convert 3-D points to 2-D by projecting onto images.
-    '''
+    """
     points_proj = rotate(points, camera_params[:, :3])
     points_proj += camera_params[:, 3:6]
     points_proj = -points_proj[:, :2] / points_proj[:, 2, np.newaxis]
@@ -43,10 +43,10 @@ def project(points, camera_params):
 
 
 def get_residuals(params, n_cameras, n_points, camera_indices, point_indices, points_2d):
-    '''
+    """
     Compute residuals.
     `params` contains camera parameters and 3-D coordinates.
-    '''
+    """
     camera_params = params[:n_cameras * 9].reshape((n_cameras, 9))
     points_3d = params[n_cameras * 9:].reshape((n_points, 3))
     points_proj = project(points_3d[point_indices], camera_params[camera_indices])
@@ -54,9 +54,9 @@ def get_residuals(params, n_cameras, n_points, camera_indices, point_indices, po
 
 
 def bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices):
-    '''
+    """
     Get sparse matrix of all given parameters.
-    '''
+    """
     m = camera_indices.size * 2
     n = n_cameras * 9 + n_points * 3
     A = lil_matrix((m, n), dtype=int)
@@ -74,11 +74,11 @@ def bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indice
 
 
 def build_camera(R, t):
-    '''
+    """
     First 3 components in each row form a rotation vector,
     next 3 components form a translation vector,
     then a focal distance and two distortion parameters.
-    '''
+    """
     camera = R.flatten()
     camera = np.append(camera, t.flatten())
     camera = np.append(camera, K[0][0])
@@ -93,9 +93,9 @@ def revert_camera_build(bundle_camera_matrix):
 
 
 def prepare_data(cameras, frame_points_3d, frame_points_2d, keyframe_idx):
-    '''
+    """
     Convert input data into specific data structures needed for scipy.
-    '''
+    """
     camera_params = np.empty((0, 9))
     for c in cameras:
         R, _ = cv2.Rodrigues(c.R_mat)
@@ -138,9 +138,9 @@ def prepare_data(cameras, frame_points_3d, frame_points_2d, keyframe_idx):
 
 
 def optimized_params(params, n_cameras, n_points_per_frame):
-    '''
+    """
     Retrieve camera parameters and 3-D coordinates.
-    '''
+    """
     tmp = params[:n_cameras * 9].reshape((n_cameras, 9))
     cameras = []
     for c in tmp:
@@ -149,19 +149,20 @@ def optimized_params(params, n_cameras, n_points_per_frame):
 
     points3d = []
     range_counter = 0
-    for range in n_points_per_frame:
-        range_points = range * 3
+    for r in n_points_per_frame:
+        range_points = r * 3
         points3d.append(
-            params[n_cameras * 9 + range_counter:n_cameras * 9 + range_counter + range_points].reshape((range, 1, 3)))
+            params[n_cameras * 9 + range_counter:n_cameras * 9 + range_counter + range_points].reshape((r, 1, 3)))
         range_counter += range_points
 
     return cameras, points3d
 
 
 def filter_outliers(cameras, points_2d, points_3d):
-    '''
-    Filter out reprojected points in 2D and 3D according to a threshold to prevent outliers to affect the result of the bundle adjustment.
-    '''
+    """
+    Filter out reprojected points in 2D and 3D according to a threshold to prevent outliers to affect the result of
+    the bundle adjustment.
+    """
     in_points_2d = []
     in_points_3d = []
 
@@ -189,11 +190,11 @@ def filter_outliers(cameras, points_2d, points_3d):
 
 
 def start_bundle_adjustment(cameras, points3d, points2d, keyframe_idx):
-    '''
+    """
     Main method of this bundle adjustment wrapper. Can be currently used with keyframes only.
-    '''
+    """
     logging.info('start bundle adjustment ...')
-    #points3d, points2d = filter_outliers(cameras, points2d, points3d)
+    # points3d, points2d = filter_outliers(cameras, points2d, points3d)
     camera_params, camera_indices, point_indices, points_3d, points_2d = prepare_data(cameras, points3d, points2d,
                                                                                       keyframe_idx)
 
@@ -210,9 +211,9 @@ def start_bundle_adjustment(cameras, points3d, points2d, keyframe_idx):
 
     x0 = np.hstack((camera_params.ravel(), points_3d.ravel()))
 
-    f0 = get_residuals(x0, n_cameras, n_points, camera_indices, point_indices, points_2d)
-    plt.plot(f0)
-    plt.show()
+    # f0 = get_residuals(x0, n_cameras, n_points, camera_indices, point_indices, points_2d)
+    # plt.plot(f0)
+    # plt.show()
 
     A = bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices)
     t0 = time.time()
@@ -222,8 +223,8 @@ def start_bundle_adjustment(cameras, points3d, points2d, keyframe_idx):
 
     logging.info('Optimization took {0:.0f} seconds'.format(t1 - t0))
 
-    plt.plot(res.fun)
-    plt.show()
+    # plt.plot(res.fun)
+    # plt.show()
 
     optimized_cameras, optimized_points_3d = optimized_params(res.x, n_cameras, n_points_per_frame)
 

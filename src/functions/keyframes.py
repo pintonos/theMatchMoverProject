@@ -9,12 +9,11 @@ MIN_MATCHES = 350
 
 def find_next_key_frame(idx1, idx2):
     '''
-    finds point matches that are preserved between idx1 and idx2
-    :param video: video file with more than |idx2| frames
+    Finds point matches that are preserved between idx1 and idx2
     :param idx1: index to start with
     :param idx2: index to end with
-    :return: list of dict with structure [{'startPoint': 2DPoint, 'endPoint': 2DPoint}],
-        startPoint is the 2DPoint of the first frame, endPoint is the 2DPoint of the last frame
+    :returns: list of dict with structure [{'startPoint': 2DPoint, 'endPoint': 2DPoint}],
+    startPoint is the 2DPoint of the first frame, endPoint is the 2DPoint of the last frame
     '''
 
     video, _ = helper.get_video_streams()
@@ -101,9 +100,9 @@ def get_all_keyframes(start_frame_idx, end_frame_idx):
 
 
 def get_keyframe_pts(keyframes):
-    '''
+    """
     Convert keyframe structure to get a list of lists of 2D image points per keyframe representing all frames.
-    '''
+    """
     keyframe_pts = []
     for k in keyframes:
         pts_list = []

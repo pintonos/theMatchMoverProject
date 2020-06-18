@@ -41,9 +41,7 @@ def get_front_of_camera(svd, K, points_3d):
     else:
         R = R2
 
-    # sanity check for R
-    if not np.isclose(np.linalg.det(R), 1.0, atol=1.e-5):
-        raise Exception('det(R) != 1, instead it is:', np.linalg.det(R))
+    sanity_check_R(R)
     return R, t
 
 
@@ -71,13 +69,12 @@ def filter_pts(pts1, pts2, mask):
 
 
 def get_R_and_t(pts1, pts2, K, compute_with_f=False, own_cheirality_check=False):
-    '''
+    """
     get R and t from essential matrix E
 
     reference: https://stackoverflow.com/questions/33906111/how-do-i-estimate-positions-of-two-cameras-in-opencv
-    '''
+    """
 
-    E = None
     if compute_with_f:  # compute essential matrix via fundamental matrix
         E, mask = get_E_from_F(pts1, pts2, K)
     else:  # find essential matrix directly
@@ -97,10 +94,7 @@ def get_R_and_t(pts1, pts2, K, compute_with_f=False, own_cheirality_check=False)
         # Recover relative camera rotation and translation from E and the corresponding points
         points, R, t, _ = cv2.recoverPose(E, pts1, pts2, K)
 
-        # sanity check for R
-        if not np.isclose(np.linalg.det(R), 1.0, atol=1.e-5):
-            raise Exception('det(R) != 1, instead it is:', np.linalg.det(R))
-
+        sanity_check_R(R)
         return R, t
 
     svd = cv2.decomposeEssentialMat(E)
@@ -108,11 +102,12 @@ def get_R_and_t(pts1, pts2, K, compute_with_f=False, own_cheirality_check=False)
 
 
 def triangulate_points(R1, t1, R2, t2, ref_pts1, ref_pts2, dist, K):
-    '''
-    Get triangulated points of two given cameras and correspoding reference points. Reference points will be undistorted with K and dist.
+    """
+    Get triangulated points of two given cameras and corresponding reference points. Reference points will be
+    undistorted with K and dist.
 
     reference: https://stackoverflow.com/questions/16295551/how-to-correctly-use-cvtriangulatepoints/16299909
-    '''
+    """
     svd = None
     if type(R2) is list:
         svd = R2 + [t2]
@@ -139,3 +134,8 @@ def triangulate_points(R1, t1, R2, t2, ref_pts1, ref_pts2, dist, K):
         world_coords = triangulate_points(R1, t1, R2, t2, ref_pts1, ref_pts2, dist, K)
 
     return world_coords
+
+
+def sanity_check_R(R):
+    if not np.isclose(np.linalg.det(R), 1.0, atol=1.e-5):
+        raise Exception('det(R) != 1, instead it is:', np.linalg.det(R))

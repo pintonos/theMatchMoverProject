@@ -2,8 +2,9 @@ from functions import *
 from util import models
 from matplotlib import pyplot as plt
 import cv2
+import numpy as np
 
-''' 
+'''
 Functions required for automatic point matching
 
 These functions are used for point matching between to frames
@@ -12,9 +13,9 @@ in order to perform a stereo calibration.
 
 
 def lowes_ratio_test(kp1, kp2, matches, threshold=0.8):
-    '''
+    """
     Ratio test as per Lowe's paper.
-    '''
+    """
     pts1 = []
     pts2 = []
     good = []
@@ -31,10 +32,9 @@ def lowes_ratio_test(kp1, kp2, matches, threshold=0.8):
 
 
 def get_flann_matches(kp1, des1, kp2, des2, detector):
-    '''
+    """
     Computes matches between keypoints with FLANN algorithm. Filters matches with Lowe's ratio test.
-    '''
-    index_params = None
+    """
 
     # FLANN parameters
     if detector == Detector.ORB:
@@ -69,6 +69,7 @@ def get_brute_force_matches(kp1, des1, kp2, des2, detector, ratio_test=True):
     :param detector Detector method previously used to match points
     :param ratio_test defines how matches should be validated. If ratio_test is True, the matches are checked with
     Lowe's ratio test. Otherwise, the matches are sorted and the worst (half of the list) are dropped.
+    :returns pts1, pts2, matches
     '''
     if detector == models.Detector.ORB:
         bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=not ratio_test)
@@ -104,8 +105,10 @@ def detect_and_match_keypoints(img1, img2, detector=models.Detector.ORB, filtere
     :param img1 First image to match points
     :param img2 Second image to match points
     :param detector The keypoint detector (SIFT, SURF, FAST, ORB)
+    :param filtered Filter images to remove noise like a gaussian, but preserves edges
     :param matcher The keypoint matcher (BRUTE_FORCE, FLANN)
     :param show_matches Debugging option to draw matches into the images
+    :returns pts1, pts2, matches
     '''
     gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
     gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)

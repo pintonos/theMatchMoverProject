@@ -2,6 +2,7 @@ from functions import matcher_functions
 from util import helper
 from util import models
 import numpy as np
+import logging
 
 MIN_MATCHES = 350
 
@@ -18,7 +19,7 @@ def find_next_key_frame(idx1, idx2):
 
     video, _ = helper.get_video_streams()
     if idx2 - idx1 <= 0:
-        print('warning, called find_trace_points with 0 or negative frame indexes')
+        logging.warning('warning, called find_trace_points with 0 or negative frame indexes')
         return []
 
     curr_idx = -1
@@ -62,7 +63,7 @@ def find_next_key_frame(idx1, idx2):
             if len(traced_matches) <= MIN_MATCHES or curr_idx == idx2 - 1:
                 # new keyframe
                 new_keyframe_pos = curr_idx + 1
-                print('found keyframe at pos ' + str(new_keyframe_pos))
+                logging.info('found keyframe at pos ' + str(new_keyframe_pos))
                 keyframes.append(traced_matches)
                 keyframe_found = True
                 break
@@ -73,7 +74,7 @@ def find_next_key_frame(idx1, idx2):
         return keyframes, new_keyframe_pos
     else:
         keyframes.append(traced_matches)
-        print('last keyframe found')
+        logging.info('last keyframe found')
         return keyframes, None
 
 

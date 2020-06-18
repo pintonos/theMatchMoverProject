@@ -192,7 +192,7 @@ def start_bundle_adjustment(cameras, points3d, points2d, keyframe_idx):
     '''
     Main method of this bundle adjustment wrapper. Can be currently used with keyframes only.
     '''
-    print('start bundle adjustment ...')
+    logging.info('start bundle adjustment ...')
     #points3d, points2d = filter_outliers(cameras, points2d, points3d)
     camera_params, camera_indices, point_indices, points_3d, points_2d = prepare_data(cameras, points3d, points2d,
                                                                                       keyframe_idx)
@@ -203,10 +203,10 @@ def start_bundle_adjustment(cameras, points3d, points2d, keyframe_idx):
 
     n = 9 * n_cameras + 3 * n_points
     m = 2 * points_2d.shape[0]
-    print('n_cameras: {}'.format(n_cameras))
-    print('n_points: {}'.format(n_points))
-    print('Total number of parameters: {}'.format(n))
-    print('Total number of residuals: {}'.format(m))
+    logging.info('n_cameras: {}'.format(n_cameras))
+    logging.info('n_points: {}'.format(n_points))
+    logging.info('Total number of parameters: {}'.format(n))
+    logging.info('Total number of residuals: {}'.format(m))
 
     x0 = np.hstack((camera_params.ravel(), points_3d.ravel()))
 
@@ -220,7 +220,7 @@ def start_bundle_adjustment(cameras, points3d, points2d, keyframe_idx):
                         args=(n_cameras, n_points, camera_indices, point_indices, points_2d))
     t1 = time.time()
 
-    print('Optimization took {0:.0f} seconds'.format(t1 - t0))
+    logging.info('Optimization took {0:.0f} seconds'.format(t1 - t0))
 
     plt.plot(res.fun)
     plt.show()

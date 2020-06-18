@@ -34,7 +34,7 @@ try:
     K = np.load(CAMERA_MATRIX)
     dist = np.load(CAMERA_DIST_COEFF)
 except IOError:
-    print('ERROR: No camera matrix or distortion coefficient initialized. Calibrate camera first.')
+    logging.error('No camera matrix or distortion coefficient initialized. Calibrate camera first.')
     exit(-1)
 
 # load config from default.conf file

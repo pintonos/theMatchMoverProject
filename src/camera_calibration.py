@@ -29,7 +29,7 @@ img_points_2d = []  # 2d points in image plane.
 video = cv2.VideoCapture(CALIB_VIDEO_PATH)
 frames_total = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 
-print('Processing', frames_total, 'frames ...')
+logging.info('Processing {} frames ...'.format(frames_total))
 
 count = 0
 success = True
@@ -65,12 +65,12 @@ while success:
 video.release()
 cv2.destroyAllWindows()
 
-print('Video processing completed, calculating calibration matrix...')
+logging.info('Video processing completed, calculating calibration matrix...')
 
 # Calibrate camera
 gray = cv2.cvtColor(demo_img, cv2.COLOR_BGR2GRAY)
-print(obj_points_3d)
-print(img_points_2d)
+logging.info(obj_points_3d)
+logging.info(img_points_2d)
 
 ret, mtx, dist_tmp, rvecs, tvecs = cv2.calibrateCamera(obj_points_3d, img_points_2d, gray.shape[::-1], None, None)
 
@@ -81,7 +81,7 @@ camera_mtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist_tmp, (w, h), 1, (w, h)
 if SAVE:
     np.save(CAMERA_DIST_COEFF, dist_tmp)
     np.save(CAMERA_MATRIX, camera_mtx)
-print('Camera matrix: ' + str(camera_mtx))
+logging.info('Camera matrix: {}'.format(camera_mtx))
 
 # Calculate mean error
 mean_error = 0
@@ -90,4 +90,4 @@ for i in range(len(obj_points_3d)):
     error = cv2.norm(img_points_2d[i], tmp_proj_points, cv2.NORM_L2) / len(tmp_proj_points)
     mean_error += error
 
-print('Total error: ', mean_error / len(obj_points_3d))
+logging.info('Total error: {}'.format(mean_error / len(obj_points_3d)))

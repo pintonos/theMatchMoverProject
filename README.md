@@ -13,13 +13,14 @@ In the project, we apply the techniques learned in the associated lecture. Start
 
 ## Prerequisites
 
-Our code was developed for Python 3.8.
+Our code was developed for Python 3.7.
 
 The following packages are required.
 Although the code should also run on different versions, we exclusively guarantee the functionality for the listed versions.
 
 - `numpy 1.18.4`
-- `opencv-python 4.2.0.34`
+- `opencv-python 3.4.2.17`
+- `opencv-contrib-python 3.4.2.17`
 - `pandas 1.0.3`
 - `scipy 1.4.1`
 - `wget 3.2`

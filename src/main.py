@@ -3,7 +3,9 @@ from util import helper
 import numpy as np
 import cv2
 import logging
+from timeit import default_timer as timer
 
+start = timer()
 
 # video streams for input and output
 reader, writer = helper.get_video_streams()
@@ -81,7 +83,8 @@ for i in range(len(cameras)):
         cv2.waitKey(0)
     writer.write(img)
 
-logging.info('done')
+end = timer()
+logging.info('finished in {} seconds'.format(end - start))
 cv2.destroyAllWindows()
 reader.release()
 writer.release()

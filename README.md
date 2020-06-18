@@ -39,7 +39,7 @@ The default configuration is sufficient to run the code and will download the ex
 
 ## Demo
 
-We provide a **[Jupyter notebook on Google Colab](https://colab.research.google.com/drive/1iBBZnpQBInIY_H4Xb1wP-FdoRGKzCoxQ?usp=sharing)**, to test the code without the need to install any dependencies. Simply make a copy of the notebook and run the code. A download of the final video is provided.
+We provide a **[Jupyter notebook on Google Colab](https://colab.research.google.com/drive/1iBBZnpQBInIY_H4Xb1wP-FdoRGKzCoxQ)**, to test the code without the need to install any dependencies. Simply make a copy of the notebook and run the code. A download of the final video is provided.
 
 Commands are executed from the `src/` directory.
 

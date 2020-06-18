@@ -5,8 +5,8 @@ from scipy.sparse import lil_matrix
 import time
 
 """
-bundle adjustments, from:
-https://scipy-cookbook.readthedocs.io/items/bundle_adjustment.html
+Bundle adjustment methods
+reference: https://scipy-cookbook.readthedocs.io/items/bundle_adjustment.html
 """
 
 
@@ -52,6 +52,9 @@ def get_residuals(params, n_cameras, n_points, camera_indices, point_indices, po
 
 
 def bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices):
+    """
+    Get sparse matrix of all given parameters.
+    """
     m = camera_indices.size * 2
     n = n_cameras * 9 + n_points * 3
     A = lil_matrix((m, n), dtype=int)
@@ -87,18 +90,10 @@ def revert_camera_build(bundle_camera_matrix):
     return R, t
 
 
-def get_close_matchpoints(match_points1, match_points2, threshold_x=5, threshold_y=5):
-    close_idx1 = []
-    close_idx2 = []
-    for i, pt in enumerate(match_points1):
-        for j, pt2 in enumerate(match_points2):
-            if pt[0] + threshold_x > pt2[0] > pt[0] - threshold_x and pt[1] + threshold_y > pt2[1] > pt[1] - threshold_y:
-                close_idx1.append(i)
-                close_idx2.append(j)
-    return close_idx1, close_idx2
-
-
 def prepare_data(cameras, frame_points_3d, frame_points_2d, keyframe_idx):
+    """
+    Convert input data into specific data structures needed for scipy.
+    """
     camera_params = np.empty((0, 9))
     for c in cameras:
         R, _ = cv2.Rodrigues(c.R_mat)
@@ -161,12 +156,13 @@ def optimized_params(params, n_cameras, n_points_per_frame):
     return cameras, points3d
 
 
-def filter_outliers(cameras, points_2d, points_3d, keyframe_idx):
+def filter_outliers(cameras, points_2d, points_3d):
+    """
+    Filter out reprojected points in 2D and 3D according to a threshold to prevent outliers to affect the result of the bundle adjustment.
+    """
     in_points_2d = []
     in_points_3d = []
 
-    all_indices = []
-    indices = [i for i in range(1000)]
     for i in range(0, len(cameras)):
         reprojected, _ = cv2.projectPoints(np.asarray(points_3d[i][0]), cameras[i].R_vec, cameras[i].t, K, dist)
         reprojected = np.reshape(reprojected, (len(reprojected), 2))
@@ -191,8 +187,11 @@ def filter_outliers(cameras, points_2d, points_3d, keyframe_idx):
 
 
 def start_bundle_adjustment(cameras, points3d, points2d, keyframe_idx):
+    """
+    Main method of this bundle adjustment wrapper. Can be currently used with keyframes only.
+    """
     print('start bundle adjustment ...')
-    #points3d, points2d = filter_outliers(cameras, points2d, points3d, keyframe_idx)
+    #points3d, points2d = filter_outliers(cameras, points2d, points3d)
     camera_params, camera_indices, point_indices, points_3d, points_2d = prepare_data(cameras, points3d, points2d,
                                                                                       keyframe_idx)
 

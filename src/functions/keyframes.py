@@ -100,6 +100,9 @@ def get_all_keyframes(start_frame_idx, end_frame_idx):
 
 
 def get_keyframe_pts(keyframes):
+    """
+    Convert keyframe structure to get a list of lists of 2D image points per keyframe representing all frames.
+    """
     keyframe_pts = []
     for k in keyframes:
         pts_list = []

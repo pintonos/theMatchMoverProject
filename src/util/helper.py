@@ -7,6 +7,9 @@ import numpy as np
 
 
 def get_video_streams():
+    """
+    Get reader and writer handlers of video.
+    """
     video = cv2.VideoCapture(VIDEO_PATH)
 
     # Get the Default resolutions
@@ -20,6 +23,9 @@ def get_video_streams():
 
 
 def get_frame(frame_index):
+    """
+    Get frame of video at given index.
+    """
     reader = cv2.VideoCapture(VIDEO_PATH)
     img = None
     for i in range(frame_index + 1):
@@ -28,6 +34,9 @@ def get_frame(frame_index):
 
 
 def get_inlier_points(points_3d, points_2d, inliers):
+    """
+    Filter out lists of 2D and 3D points coordinates according to a given list of inliers.
+    """
     filtered_3d = []
     filtered_2d = []
 
@@ -42,6 +51,9 @@ def get_inlier_points(points_3d, points_2d, inliers):
 
 
 def correct_matches(points, halfway_idx):
+    """
+    Get corrected 2D point coordinates of two keyframes using the optimal triangulation method.
+    """
     if halfway_idx >= len(points):
         return None, None
 
@@ -55,6 +67,9 @@ def correct_matches(points, halfway_idx):
 
 
 def get_3d_points_for_consecutive_frames(points_3d, points_2d):
+    """
+    Get a list of world coordinates for given 2D points. Assumption: all intermediate frames see the same world points.
+    """
     points_3d = [points_3d for _ in range(points_2d.shape[0])]
     return np.asarray(points_3d)
 

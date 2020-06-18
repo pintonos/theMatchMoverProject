@@ -1,8 +1,9 @@
 import cv2
 import numpy as np
 
-""" Functions for stereo pose estimation
-"""
+'''
+Functions for stereo pose estimation
+'''
 
 
 def get_P(R, t, K):
@@ -70,11 +71,11 @@ def filter_pts(pts1, pts2, mask):
 
 
 def get_R_and_t(pts1, pts2, K, compute_with_f=False, own_cheirality_check=False):
-    """
+    '''
     get R and t from essential matrix E
 
     reference: https://stackoverflow.com/questions/33906111/how-do-i-estimate-positions-of-two-cameras-in-opencv
-    """
+    '''
 
     E = None
     if compute_with_f:  # compute essential matrix via fundamental matrix
@@ -107,11 +108,11 @@ def get_R_and_t(pts1, pts2, K, compute_with_f=False, own_cheirality_check=False)
 
 
 def triangulate_points(R1, t1, R2, t2, ref_pts1, ref_pts2, dist, K):
-    """
+    '''
     Get triangulated points of two given cameras and correspoding reference points. Reference points will be undistorted with K and dist.
 
     reference: https://stackoverflow.com/questions/16295551/how-to-correctly-use-cvtriangulatepoints/16299909
-    """
+    '''
     svd = None
     if type(R2) is list:
         svd = R2 + [t2]

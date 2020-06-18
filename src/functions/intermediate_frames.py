@@ -3,9 +3,9 @@ import logging
 
 
 def get_intermediate_cameras(keyframe_cameras, points_3d, points_2d, start_idx):
-    """
+    '''
     Returns all cameras of all frames. Calculates new intermediate cameras given keyframes cameras to fill up holes in between keyframe cameras.
-    """
+    '''
     logging.info('get intermediate cameras ...')
     all_cameras = []
 

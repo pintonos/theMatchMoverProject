@@ -4,11 +4,11 @@ import sys
 import numpy as np
 import logging
 
-""" 
+''' 
 Contains project config
 Paths for INPUT and OUTPUT video files
 Paths for INTERMEDIATE files
-"""
+'''
 
 # Temporary file paths
 DATA_PATH = os.path.join('..', 'resources', 'data')
@@ -29,6 +29,7 @@ global VIDEO_PATH
 global VIDEO_OUT_PATH
 global SHOW_FRAMES
 
+# load camera calibration from disk
 try:
     K = np.load(CAMERA_MATRIX)
     dist = np.load(CAMERA_DIST_COEFF)
@@ -36,12 +37,13 @@ except IOError:
     print('ERROR: No camera matrix or distortion coefficient initialized. Calibrate camera first.')
     exit(-1)
 
+# load config from default.conf file
 try:
     with open(CONFIG_PATH) as config_file:
         lines = config_file.read().splitlines()
         args = {}
         for line in lines:
-            name, var = line.partition("=")[::2]
+            name, var = line.partition('=')[::2]
             args[name.strip()] = var
 
         CALIB_VIDEO_PATH = args['calib_video_path']
@@ -70,8 +72,6 @@ try:
         except:
             logging.warning('no input video found, auto download failed')
             sys.exit(-1)
-
-
 except IOError:
     logging.error('default.conf is missing or invalid.')
     sys.exit(-1)

@@ -3,18 +3,18 @@ from util import models
 from matplotlib import pyplot as plt
 import cv2
 
-""" 
+''' 
 Functions required for automatic point matching
 
 These functions are used for point matching between to frames
 in order to perform a stereo calibration.
-"""
+'''
 
 
 def lowes_ratio_test(kp1, kp2, matches, threshold=0.8):
-    """
+    '''
     Ratio test as per Lowe's paper.
-    """
+    '''
     pts1 = []
     pts2 = []
     good = []
@@ -31,9 +31,9 @@ def lowes_ratio_test(kp1, kp2, matches, threshold=0.8):
 
 
 def get_flann_matches(kp1, des1, kp2, des2, detector):
-    """
+    '''
     Computes matches between keypoints with FLANN algorithm. Filters matches with Lowe's ratio test.
-    """
+    '''
     index_params = None
 
     # FLANN parameters
@@ -60,11 +60,16 @@ def get_flann_matches(kp1, des1, kp2, des2, detector):
 
 
 def get_brute_force_matches(kp1, des1, kp2, des2, detector, ratio_test=True):
-    """
+    '''
     Computes matches between keypoints with BF algorithm.
+    :param kp1 First list of keypoints
+    :param des1 Descriptors of first keypoints
+    :param kp2 Second list of keypoints
+    :param des2 Descriptors of second keypoints
+    :param detector Detector method previously used to match points
     :param ratio_test defines how matches should be validated. If ratio_test is True, the matches are checked with
     Lowe's ratio test. Otherwise, the matches are sorted and the worst (half of the list) are dropped.
-    """
+    '''
     if detector == models.Detector.ORB:
         bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=not ratio_test)
     else:
@@ -73,7 +78,7 @@ def get_brute_force_matches(kp1, des1, kp2, des2, detector, ratio_test=True):
     if ratio_test:
         matches = bf.knnMatch(des1, des2, k=2)
         pts1, pts2, good_matches = lowes_ratio_test(kp1, kp2, matches)
-    if not ratio_test:
+    else:
         # Match descriptors
         matches = bf.match(des1, des2)
 
@@ -94,11 +99,14 @@ def get_brute_force_matches(kp1, des1, kp2, des2, detector, ratio_test=True):
 
 def detect_and_match_keypoints(img1, img2, detector=models.Detector.ORB, filtered=True,
                                matcher=models.Matcher.BRUTE_FORCE, show_matches=False):
-    """
+    '''
     Detects, matches and filters keypoints between two images.
+    :param img1 First image to match points
+    :param img2 Second image to match points
     :param detector The keypoint detector (SIFT, SURF, FAST, ORB)
     :param matcher The keypoint matcher (BRUTE_FORCE, FLANN)
-    """
+    :param show_matches Debugging option to draw matches into the images
+    '''
     gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
     gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
 

@@ -5,8 +5,10 @@ import cv2
 import logging
 
 
+# video streams for input and output
 reader, writer = helper.get_video_streams()
 
+# restrict video to frame numbers
 start_frame = 0
 end_frame = 100  # int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
 

@@ -1,9 +1,8 @@
 from util import *
 
-""" Calibrate camera with calibration video
-
+''' Calibrate camera with calibration video
 Will calculate camera matrix and distortion coefficient
-"""
+'''
 
 CALIBR_BOARD_SHAPE = (8, 6)
 CALIBR_SQUARE_SIZE_MM = 25
@@ -11,7 +10,9 @@ CRITERIA = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, CALIBR_SQUARE_SI
 
 
 def get_obj_point_structure():
-    """Prepare object points dependant of BOARD_SIZE"""
+    '''
+    Prepare object points dependant of BOARD_SIZE
+    '''
     object_points = np.zeros((CALIBR_BOARD_SHAPE[0] * CALIBR_BOARD_SHAPE[1], 3), np.float32)
     object_points[:, :2] = np.mgrid[0:CALIBR_BOARD_SHAPE[0], 0:CALIBR_BOARD_SHAPE[1]].T.reshape(-1, 2)
     return object_points
@@ -59,7 +60,7 @@ while success:
 
         # DEBUG: Draw and display corners
         # cv2.imshow('Corners', cv2.drawChessboardCorners(img, CALIBR_BOARD_SHAPE, corners_refined, ret))
-        #cv2.waitKey(50)
+        # cv2.waitKey(50)
 
 video.release()
 cv2.destroyAllWindows()
@@ -89,4 +90,4 @@ for i in range(len(obj_points_3d)):
     error = cv2.norm(img_points_2d[i], tmp_proj_points, cv2.NORM_L2) / len(tmp_proj_points)
     mean_error += error
 
-print("Total error: ", mean_error / len(obj_points_3d))
+print('Total error: ', mean_error / len(obj_points_3d))

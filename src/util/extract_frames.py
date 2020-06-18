@@ -1,9 +1,9 @@
 from util import *
 
-""" Extract two different frames from input video
-
+'''
+Debugging tool to extract two different frames from input video
 Frames are saved in DATA_PATH
-"""
+'''
 
 video = cv2.VideoCapture('../' + VIDEO_PATH)
 frames_total = int(video.get(cv2.CAP_PROP_FRAME_COUNT))

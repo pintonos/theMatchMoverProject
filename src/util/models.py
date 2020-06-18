@@ -1,9 +1,9 @@
 import cv2
 from enum import Enum
 
-"""
+'''
 Helper Enums and Classes
-"""
+'''
 
 
 class Detector(Enum):

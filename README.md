@@ -67,7 +67,7 @@ To re-run the **frame-by-frame keypoint analysis**, remove or rename the followi
 
 A full work report, including our methods and chosen parameters can be found at
 
-TODO
+[https://tkupek.eu/visual-geometry/visual-geometry-work-report-peintner-gugglberger-kupek.pdf](https://tkupek.eu/visual-geometry/visual-geometry-work-report-peintner-gugglberger-kupek.pdf)
 
 ## Preview
 

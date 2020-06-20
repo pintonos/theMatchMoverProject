@@ -71,9 +71,7 @@ TODO
 
 ## Preview
 
-![1.png](resources/1.png)
-![2.png](resources/2.png)
-![3.png](resources/3.png)
+![output.gif](https://tkupek.eu/visual-geometry/output.gif)
 
 ### Used tutorials and sources
 - https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_calib3d/py_calibration/py_calibration.html
